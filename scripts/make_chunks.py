@@ -20,9 +20,17 @@ def main():
     ap.add_argument("--manifest", required=True, type=Path)
     ap.add_argument("--chunks-dir", required=True, type=Path)
     ap.add_argument("--per-chunk", type=int, default=3)
+    ap.add_argument(
+        "--codes",
+        help="comma-separated EB codes to include (one copy per edition), "
+        "e.g. EB.1,EB.4,EB.5,EB.7,EB.9,EB.10,EB.11,EB.12,EB.15,EB.16",
+    )
     args = ap.parse_args()
 
     rows = [json.loads(l) for l in open(args.manifest, encoding="utf-8")]
+    if args.codes:
+        keep = {c.strip() for c in args.codes.split(",")}
+        rows = [r for r in rows if r["eb_code"] in keep]
     # manifest is already in (eb_code, volume) order
     args.chunks_dir.mkdir(parents=True, exist_ok=True)
 

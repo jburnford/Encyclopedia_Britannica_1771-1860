@@ -38,16 +38,20 @@ python3 scripts/build_manifest.py \
     --out-dir  /project/def-jic823/britannica_chandra2/manifest
 
 # 2. chunk into array tasks (3 volumes ≈ 2,600 pages ≈ 3-4 h each)
+#    --codes keeps one copy per edition: EB.1 (1771 1st) over EB.3 (1773 reprint);
+#    EB.5 over EB.6 (both 1797 3rd); EB.7 (1801) over EB.8 (1803 suppl. to 3rd);
+#    EB.12 over EB.13/EB.14 (1824 suppl. to 4th-6th) -> 163 vols, ~127k pages
 python3 scripts/make_chunks.py \
     --manifest /project/def-jic823/britannica_chandra2/manifest/volumes.jsonl \
-    --chunks-dir /project/def-jic823/britannica_chandra2/chunks
+    --chunks-dir /project/def-jic823/britannica_chandra2/chunks \
+    --codes EB.1,EB.4,EB.5,EB.7,EB.9,EB.10,EB.11,EB.12,EB.15,EB.16
 
 # 3. pilot: first chunk only (1771 first edition)
 cd /project/def-jic823/britannica_chandra2/scripts
 sbatch --array=0 run_batch.slurm
 
 # 4. full run, 4 concurrent GPUs
-sbatch --array=1-64%4 run_batch.slurm
+sbatch --array=1-54%4 run_batch.slurm
 ```
 
 Re-running a chunk is safe: completed volumes are skipped via `COMPLETE`,
