@@ -659,8 +659,13 @@ def write_jsonl(records, out_path: Path):
 
 
 def main():
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from flatten_html import make_name        # reuse the HTML filename convention
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--output-dir", default="output")
+    ap.add_argument("--article-dir", default="article_data")
     ap.add_argument("--only", default="EB.1")
     ap.add_argument("--report", action="store_true")
     args = ap.parse_args()
@@ -670,13 +675,17 @@ def main():
     if not metas:
         sys.exit(f"no volumes under {root}/{args.only}/*/metadata.json")
 
+    art_dir = Path(args.article_dir)
+    art_dir.mkdir(parents=True, exist_ok=True)
+
     grand = {}
     for meta_p in metas:
         records, stats, meta = process_volume(meta_p.parent)
-        out_p = meta_p.parent / "articles.jsonl"
+        # same name as the volume's HTML, with a .jsonl extension
+        out_p = art_dir / (make_name(meta)[:-len(".html")] + ".jsonl")
         write_jsonl(records, out_p)
         print(f"{meta.get('eb_code')} v{meta.get('volume_num')} "
-              f"({meta.get('alpha_range')}): {len(records)} records -> {out_p.relative_to(root)}")
+              f"({meta.get('alpha_range')}): {len(records)} records -> {out_p}")
         if args.report:
             print(f"    articles={stats['articles']} sub_entries={stats['sub_entries']} "
                   f"treatises={stats['treatises']} | bold={stats['bold']} "
