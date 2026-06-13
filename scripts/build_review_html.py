@@ -36,10 +36,12 @@ def problems(r):
     elif wc(body) <= 4 and not r.get("is_cross_reference") and r.get("type") != "treatise":
         flags.append("fragment")
     ps, pe = r.get("printed_page_start"), r.get("printed_page_end")
+    # relative checks only — editions differ in pagination (EB.1 resets per volume,
+    # EB.4 runs continuously to ~9000), so an absolute page ceiling is meaningless.
     if ps and pe and pe < ps:
         flags.append("page-end<start")
-    if pe and pe > 1100:
-        flags.append("page-misread")
+    if ps and pe and r.get("type") != "treatise" and pe - ps > 30:
+        flags.append("page-span-large")   # a non-treatise spanning >30pp is suspicious
     if r.get("type") != "treatise" and r.get("char_count", 0) > 25000:
         flags.append("long-maybe-bleed")
     return flags

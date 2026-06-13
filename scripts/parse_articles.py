@@ -32,7 +32,44 @@ from lxml import etree
 
 COL_SPLIT = 500          # bbox x1 < 500 => left column, else right column
 MIN_TREATISE_PAGES = 2   # a trigram-gap run this long with a word running head
-NONWORD_HEAD = ("PLATE", "FIG", "PART", "CHAP")
+NONWORD_HEAD = ("PLATE", "FIG", "PART", "CHAP", "SECT")   # not treatise titles
+
+# ----------------------------------------------------------------------------
+# edition profiles — the few things that differ between editions. The core
+# segmentation (headwords, treatise gaps, sub-entries, cross-refs, postprocess)
+# is shared; a profile only toggles edition-specific handling. Unknown editions
+# fall back to DEFAULT_PROFILE (1st-edition behaviour).
+# ----------------------------------------------------------------------------
+DEFAULT_PROFILE = {
+    "margin_notes": False,   # drop outer-margin side-glosses / footnotes from bodies
+    "multivol": False,       # treatises may span volume boundaries (start mid-treatise)
+}
+EDITION_PROFILES = {
+    "EB.1": {"margin_notes": False, "multivol": False},   # 1771, 3 vols, A-B/C-L/M-Z
+    "EB.4": {"margin_notes": True,  "multivol": True},     # 1778-83, 10 vols, marginal glosses
+}
+
+
+def profile_for(meta):
+    return EDITION_PROFILES.get(meta.get("eb_code"), DEFAULT_PROFILE)
+
+
+def drop_margin_notes(blocks):
+    """Remove the 2nd-edition marginal side-glosses and margin footnotes
+    ("Abaci, various.", "* See Adansonia.") that would otherwise leak into the
+    body. They are narrow Text blocks pinned to a page's OUTER margin; body
+    columns are ~400px wide, so a <110px block at the far left/right is a note.
+    Mid-column narrow blocks (drop-cap initials) are deliberately kept."""
+    if not blocks:
+        return blocks
+    page_x2 = max((b.bbox[2] for b in blocks if b.bbox), default=0)
+    out = []
+    for b in blocks:
+        if (b.label == "Text" and b.bbox and (b.bbox[2] - b.bbox[0]) < 110
+                and (b.bbox[0] < 100 or b.bbox[2] > page_x2 - 60)):
+            continue
+        out.append(b)
+    return out
 
 # uppercase class includes Latin-1 caps + ligatures (ÆDES, ÆGIS, ŒCONOMY, ÇA ...)
 _UC = "A-ZÀ-ÖØ-ÞŒ"
@@ -117,6 +154,15 @@ TREATISE_DISPLAY = {
     "RELIGIONORTHEOLOGY": "RELIGION, OR THEOLOGY",
     "WATCHANDCLOCKWORK": "WATCH and CLOCK-WORK",
     "SHORTHANDWRITING": "SHORT-HAND WRITING",
+    # EB.4 (2nd ed.) multi-word dissertation titles
+    "COMPARATIVEANATOMY": "COMPARATIVE ANATOMY",
+    "EXPERIMENTALPHILOSOPHY": "EXPERIMENTAL PHILOSOPHY",
+    "MATERIAMEDICA": "MATERIA MEDICA",
+    "LAWOFSCOTLAND": "LAW OF SCOTLAND",
+    "PETITEGUERRE": "PETITE GUERRE",
+    "LISTOFAUTHORS": "LIST OF AUTHORS",
+    "CRAYONPAINTING": "CRAYON-PAINTING",
+    "SHIPBUILDING": "SHIP-BUILDING",
 }
 
 
@@ -260,7 +306,7 @@ def parse_page_header(blocks):
         t = text_of(b.el).strip()
         if not t:
             continue
-        if re.fullmatch(r"\(?\s*\d{1,4}\s*\)?\.?", t):
+        if re.fullmatch(r"[\[(]?\s*\d{1,4}\s*[\])]?\.?", t):   # ( 5 ) EB.1 · [ 101 ] EB.4
             page_no = int(re.search(r"\d+", t).group())
         elif re.search(r"[A-Za-z]", t):
             alphas.append(unspace_caps(t))
@@ -439,7 +485,7 @@ def allcaps_h2_title(blocks):
         if b.label != "Section-Header":
             continue
         for h in b.el.iter("h1", "h2"):
-            t = re.sub(r"\s+", " ", text_of(h)).strip(" .,;:")
+            t = unspace_caps(re.sub(r"\s+", " ", text_of(h)).strip(" .,;:"))
             letters = [c for c in t if c.isalpha()]
             if len(letters) >= 8 and sum(c.isupper() for c in letters) / len(letters) >= 0.8:
                 return t
@@ -642,6 +688,7 @@ def find_body_start(pages, alpha0):
 
 def process_volume(vol_dir: Path):
     meta = json.loads((vol_dir / "metadata.json").read_text())
+    prof = profile_for(meta)
     pages = []
     with (vol_dir / "pages.jsonl").open() as fh:
         for idx, line in enumerate(fh):
@@ -650,12 +697,32 @@ def process_volume(vol_dir: Path):
                 continue
             rec = json.loads(line)
             blocks = parse_blocks(rec.get("raw", "") or "")
+            head = parse_page_header(blocks)            # header parsed before filtering
+            if prof["margin_notes"]:
+                blocks = drop_margin_notes(blocks)
             pages.append({"idx": idx, "image": rec.get("image", ""),
-                          "blocks": blocks, "head": parse_page_header(blocks)})
+                          "blocks": blocks, "head": head})
 
     alpha0 = (meta.get("alpha_range") or "A")[0].upper()
     body_start = find_body_start(pages, alpha0)
-    spans = detect_treatise_spans(pages, body_start)
+    if prof["multivol"]:
+        # multi-volume editions split treatises across volume boundaries: a volume
+        # can OPEN in the middle of one (vol 2 = "Astronomy-BZO" starts mid-ASTRONOMY).
+        # The alpha_range opener tells us: a treatise NAME ("Astronomy", "Medicines",
+        # "Optics") means the volume opens mid-treatise; a letter range ("A-AST", "C")
+        # means a normal dictionary start. Only then do we scan/process from page 0,
+        # capturing the continuation — otherwise front matter (PREFACE) would be
+        # mis-captured and find_body_start lands on a stray headword inside it.
+        spans = detect_treatise_spans(pages, 0)
+        opener = norm_caps((meta.get("alpha_range") or "").split("-")[0])
+        lead = None
+        if len(opener) >= 4:                       # a treatise title, not "A"/"AST"
+            lead = next((s for s in sorted(spans)
+                         if s < body_start and spans[s]["title_norm"][:5] == opener[:5]), None)
+        loop_start = lead if lead is not None else body_start
+    else:
+        spans = detect_treatise_spans(pages, body_start)
+        loop_start = body_start
 
     records, cur = [], None
     stats = {"articles": 0, "sub_entries": 0, "treatises": 0, "bold": 0,
@@ -693,7 +760,7 @@ def process_volume(vol_dir: Path):
             elif cur is not None:
                 cur.add(outer_html(p), text_of(p), pg)
 
-    i, n = body_start, len(pages)
+    i, n = loop_start, len(pages)
     while i < n:
         pg = pages[i]
         head = pg["head"]

@@ -26,11 +26,21 @@ Chandra 2 on Nibi H100s, headers/footers kept. See `README.md` for the pipeline.
 - **163 HTML files** committed and pushed to GitHub
   (`github.com/jburnford/Encyclopedia_Britannica_1771-1860`, public).
 
-## Stage 3 — Article parsing (EB.1 pilot complete)
+## Stage 3 — Article parsing (EB.1 + EB.4 complete)
 
 `scripts/parse_articles.py` segments the page-stream into one record per dictionary headword,
-with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.1 --report`.
-Output: `output/EB.1/<id>/articles.jsonl`.
+with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.4 --report`.
+Output: `article_data/<eb>_<edition>_v<NN>_<alpha>_<id>.jsonl`.
+
+**Edition profiles.** The core segmentation is shared across editions; an `EDITION_PROFILES` dict
+toggles only the parts that differ (unknown editions fall back to 1st-edition behaviour):
+
+| key | EB.1 | EB.4 | effect |
+|-----|------|------|--------|
+| `margin_notes` | off | on | drop outer-margin side-glosses / footnotes (2nd ed. only) from bodies |
+| `multivol` | off | on | a volume may open mid-treatise (vol 2 = `Astronomy-BZO`); capture the continuation |
+
+Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4) — edition-agnostic.
 
 ### EB.1 (1771 first edition) — all 3 volumes
 
@@ -46,6 +56,30 @@ modifier** (buried sub-entries: `CANINE teeth`, `AGARICO-fungus`) 98 · **run-on
 213 · **treatise** 43. Precision ~100% on hand-checked random samples; treatise inventory matches the
 canonical EB.1 set (ANATOMY 175pp, ASTRONOMY, CHEMISTRY, OPTICS, SURGERY, LAW = "Principles of the Law
 of Scotland", …).
+
+### EB.4 (1778–83 second edition) — all 10 volumes
+
+| Volume | Range | Records | articles | sub_entries | treatises |
+|--------|-------|--------:|---------:|------------:|----------:|
+| 144850370 v1 | A–AST | 3,082 | 2,886 | 189 | 7 |
+| 144850373 v2 | Astronomy–BZO | 2,801 | 2,512 | 284 | 5 |
+| 144850374 v3 | C | 3,401 | 2,895 | 499 | 7 |
+| 144850375 v4 | D–F | 2,657 | 2,374 | 275 | 8 |
+| 144850376 v5 | G–J | 2,298 | 2,061 | 229 | 8 |
+| 144850377 v6 | K–Medicine | 1,432 | 1,287 | 138 | 7 |
+| 144850378 v7 | Medicines–Optics | 1,276 | 1,182 | 84 | 10 |
+| 144850379 v8 | Optics–Poetry | 1,109 | 1,032 | 68 | 9 |
+| 190273289 v9 | POI–SCU | 1,753 | 1,585 | 167 | 1 |
+| 190273290 v10 | SCU–Appendix | 3,140 | 2,810 | 321 | 9 |
+| **Total** | A–Z | **22,949** | **20,624** | **2,254** | **71** |
+
+99.3% of records carry a printed page; 3 empty-body. Treatise inventory matches the 2nd edition's
+expanded dissertation set (ACOUSTICS, COMPARATIVE ANATOMY, ELECTRICITY, MATERIA MEDICA, METALLURGY,
+MINERALOGY, ORNITHOLOGY, PNEUMATICS, …). EB.4 uses **continuous pagination across the whole 10-volume
+set** (page numbers run to ~9000), not per-volume — so absolute page thresholds are meaningless.
+
+The current parser **out-of-the-box** segmented EB.4 cleanly; the only real adaptations were the three
+profile items above. Verified by sampling; the segmentation precision looks comparable to EB.1.
 
 ### Record schema
 
@@ -111,15 +145,21 @@ verified *correct* in the data (ACORUM/ACORUS, ACROTERIA/ACRITHYMIA distinct) or
 - Source **OCR transcription** errors are preserved verbatim (`anno 1491` for 1492, `wife`/`wise`,
   doubled words) — these are not parser errors and would need a separate OCR-correction pass.
 - Fully letter-spaced *outline* labels can run together ("PARTI.", "OFTHEBONES.").
+- **EB.4**: 1 of 71 treatises mis-titled (`OFFLOWERS` — a path-2 banner grabbed a section header
+  instead of the dissertation title; content is preserved, only the title is wrong). Cross-volume
+  treatises (ASTRONOMY, OPTICS) are captured as one record per volume, not yet stitched into a single
+  record across the volume boundary. A few inline `*` footnote markers / OCR-merged margin footnotes
+  remain in bodies (same class as the one-`<p>` merges).
 
 ---
 
 ## Next steps
 
-1. **Generalize the parser beyond EB.1** to the other editions (EB.4 2nd … EB.16 8th, ~160 vols).
-   Edition-specific tuning likely needed (layout, running-head conventions, treatise sets).
+1. **Continue to the remaining editions** (EB.5 3rd … EB.16 8th). EB.1 + EB.4 done; the
+   `EDITION_PROFILES` mechanism is in place, so each new edition should need only a profile entry
+   plus spot-checking (layout, running-head conventions, treatise sets).
 2. **Ground headwords to Wikidata** (use the WikidataMCP vector search; the `headword-disambig` skill).
-3. Optionally address the OCR-level limitations above if downstream use requires it.
+3. Optionally: stitch cross-volume treatises into single records; address the OCR-level limitations.
 
 ## Repo / git
 
