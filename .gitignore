@@ -1,2 +1,6 @@
 # Chandra2 OCR output (large; lives on Nibi, synced via rsync)
 output/
+
+# Python
+__pycache__/
+*.pyc
