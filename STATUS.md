@@ -155,6 +155,10 @@ recovered across both editions, 0 false-positives on full audit; e.g. `GAGE` now
 - Source **OCR transcription** errors are preserved verbatim (`anno 1491` for 1492, `wife`/`wise`,
   doubled words) — these are not parser errors and would need a separate OCR-correction pass.
 - Fully letter-spaced *outline* labels can run together ("PARTI.", "OFTHEBONES.").
+- **OCR repetition loops**: the Chandra VLM occasionally gets stuck and emits one paragraph many
+  times on a page (vol 5 page produced `GAMBOGE` ×72). A postprocess pass collapses consecutive
+  identical records (only EB.4 vol 5 was affected — 70 removed); the residual is one merged
+  `GAMBOGE`→`GAME` blob where the next article's text is trapped. The clean fix is re-OCR of that page.
 - **EB.4**: 1 of 71 treatises mis-titled (`OFFLOWERS` — a path-2 banner grabbed a section header
   instead of the dissertation title; content is preserved, only the title is wrong). Cross-volume
   treatises (ASTRONOMY, OPTICS) are captured as one record per volume, not yet stitched into a single

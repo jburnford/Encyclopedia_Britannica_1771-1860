@@ -848,12 +848,24 @@ def process_volume(vol_dir: Path):
 
 
 def postprocess(records):
-    """Three OCR-level cleanups applied after segmentation:
+    """OCR-level cleanups applied after segmentation:
+      0. collapse runs of consecutive identical records (OCR repetition loops);
       1. strip trailing printer catchwords ("… Hasselquist. ACRI-");
       2. split an end-of-volume errata block out of the entry it bled into (BZO);
       3. drop an empty-body headword stub when the next record repeats the lemma
          (a headword printed at a column bottom, its text continuing overleaf).
     """
+    # (0) repetition-loop dedup: the Chandra VLM occasionally gets stuck and emits the
+    # same paragraph many times on one page (vol 5 produced GAMBOGE x72). Identical
+    # consecutive (headword, body) records are never legitimate dictionary entries.
+    deduped = []
+    for r in records:
+        if (deduped and r["headword"] == deduped[-1]["headword"]
+                and r["body_text"] == deduped[-1]["body_text"]):
+            continue
+        deduped.append(r)
+    records = deduped
+
     stage = []
     for r in records:
         bt = CATCHWORD.sub("", r["body_text"]).rstrip()        # (1) catchword
