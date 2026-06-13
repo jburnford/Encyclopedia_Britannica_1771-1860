@@ -46,14 +46,15 @@ Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4) — edition
 
 | Volume | Range | Records | articles | sub_entries | treatises | errata |
 |--------|-------|--------:|---------:|------------:|----------:|-------:|
-| 144133901 v1 | A–B | 5,591 | 4,869 | 709 | 12 | 1 |
-| 144133902 v2 | C–L | 7,211 | 6,658 | 539 | 14 | 0 |
-| 144133903 v3 | M–Z | 6,196 | 5,946 | 233 | 17 | 0 |
-| **Total** | A–Z | **18,998** | **17,473** | **1,481** | **43** | **1** |
+| 144133901 v1 | A–B | 5,598 | 4,869 | 716 | 12 | 1 |
+| 144133902 v2 | C–L | 7,221 | 6,658 | 549 | 14 | 0 |
+| 144133903 v3 | M–Z | 6,202 | 5,946 | 239 | 17 | 0 |
+| **Total** | A–Z | **19,021** | **17,473** | **1,504** | **43** | **1** |
 
 Detection signals: **bold** at paragraph start 16,146 · **all-caps-plain** 2,549 · **all-caps + lowercase
-modifier** (buried sub-entries: `CANINE teeth`, `AGARICO-fungus`) 98 · **run-on** (stub clusters split)
-213 · **treatise** 43. Precision ~100% on hand-checked random samples; treatise inventory matches the
+modifier** (buried sub-entries: `CANINE teeth`, `AGARICO-fungus`) 98 · **inverted compound** (`Sea-GAGE`,
+`Block-CARRIAGE`) 23 · **run-on** (stub clusters split) 213 · **treatise** 43. Precision ~100% on
+hand-checked random samples; treatise inventory matches the
 canonical EB.1 set (ANATOMY 175pp, ASTRONOMY, CHEMISTRY, OPTICS, SURGERY, LAW = "Principles of the Law
 of Scotland", …).
 
@@ -61,19 +62,21 @@ of Scotland", …).
 
 | Volume | Range | Records | articles | sub_entries | treatises |
 |--------|-------|--------:|---------:|------------:|----------:|
-| 144850370 v1 | A–AST | 3,082 | 2,886 | 189 | 7 |
-| 144850373 v2 | Astronomy–BZO | 2,801 | 2,512 | 284 | 5 |
-| 144850374 v3 | C | 3,401 | 2,895 | 499 | 7 |
-| 144850375 v4 | D–F | 2,657 | 2,374 | 275 | 8 |
-| 144850376 v5 | G–J | 2,298 | 2,061 | 229 | 8 |
-| 144850377 v6 | K–Medicine | 1,432 | 1,287 | 138 | 7 |
-| 144850378 v7 | Medicines–Optics | 1,276 | 1,182 | 84 | 10 |
-| 144850379 v8 | Optics–Poetry | 1,109 | 1,032 | 68 | 9 |
-| 190273289 v9 | POI–SCU | 1,753 | 1,585 | 167 | 1 |
-| 190273290 v10 | SCU–Appendix | 3,140 | 2,810 | 321 | 9 |
-| **Total** | A–Z | **22,949** | **20,624** | **2,254** | **71** |
+| 144850370 v1 | A–AST | 3,092 | 2,886 | 199 | 7 |
+| 144850373 v2 | Astronomy–BZO | 2,826 | 2,512 | 309 | 5 |
+| 144850374 v3 | C | 3,416 | 2,895 | 514 | 7 |
+| 144850375 v4 | D–F | 2,665 | 2,374 | 283 | 8 |
+| 144850376 v5 | G–J | 2,307 | 2,061 | 238 | 8 |
+| 144850377 v6 | K–Medicine | 1,452 | 1,287 | 158 | 7 |
+| 144850378 v7 | Medicines–Optics | 1,278 | 1,182 | 86 | 10 |
+| 144850379 v8 | Optics–Poetry | 1,118 | 1,032 | 77 | 9 |
+| 190273289 v9 | POI–SCU | 1,761 | 1,585 | 175 | 1 |
+| 190273290 v10 | SCU–Appendix | 3,151 | 2,810 | 332 | 9 |
+| **Total** | A–Z | **23,066** | **20,624** | **2,371** | **71** |
 
-99.3% of records carry a printed page; 3 empty-body. Treatise inventory matches the 2nd edition's
+99.3% of records carry a printed page; 3 empty-body. **Inverted compound** sub-entries (qualifier +
+all-caps lemma — `Sea-GAGE`, `Royal PREROGATIVE`) add 117 here (140 across both editions, 0 false
+positives on full audit). Treatise inventory matches the 2nd edition's
 expanded dissertation set (ACOUSTICS, COMPARATIVE ANATOMY, ELECTRICITY, MATERIA MEDICA, METALLURGY,
 MINERALOGY, ORNITHOLOGY, PNEUMATICS, …). EB.4 uses **continuous pagination across the whole 10-volume
 set** (page numbers run to ~9000), not per-volume — so absolute page thresholds are meaningless.
@@ -134,6 +137,13 @@ alignment + function-word/continuation stoplists (98 recovered, 0 prose false-po
 block split out of the entry it bled into (BZO); (f) **empty-body dedup** — a column-bottom headword
 stub is dropped when the next record repeats the lemma (57 → 5). Several reported "merges" were
 verified *correct* in the data (ACORUM/ACORUS, ACROTERIA/ACRITHYMIA distinct) or hallucinated.
+
+**Third round** (EB.4-driven): **inverted compound** sub-entries — a paragraph opening with a
+normal-case qualifier + an ALL-CAPS lemma + comma (`Sea-GAGE,`, `Block-CARRIAGE,`, `Royal PREROGATIVE,`)
+— are now split out (the lemma is printed in small caps, so the all-caps detectors missed them). Gated
+by trigram alignment of the lemma + a qualifier stoplist (prose / section / person prefixes). 140
+recovered across both editions, 0 false-positives on full audit; e.g. `GAGE` now yields `Sliding-GAGE`,
+`Sea-GAGE`, `Wind-GAGE` as distinct sub-entries instead of one 11k-char blob.
 
 ### Known limitations (OCR-level, acceptable for the pilot)
 

@@ -118,6 +118,19 @@ CONT_WORDS = {"is", "are", "was", "were", "be", "been", "being", "has", "had",
               "signifies", "means", "says", "said", "properly", "sometimes",
               "therefore", "however", "thus", "then", "moreover"}
 
+# inverted compound sub-entry: a normal-case qualifier + an ALL-CAPS lemma (printed
+# in small caps) + comma — "Sea-GAGE,", "Block-CARRIAGE,", "Royal PREROGATIVE,".
+# The lemma is the filing word (aligns with the page trigram); the qualifier leads.
+# Distinct from ALLCAPS_HEAD (lemma first) and ALLCAPS_MOD (lemma + lowercase tail).
+INVERTED_COMPOUND = re.compile(
+    rf"^\s*([A-Z][a-zà-ÿ]+[ -]([{_UC}][{_UC}&]{{2,}}))\s*,\s+\S")
+# leading qualifier words that signal prose / a treatise section header / a person
+# reference rather than a real compound headword ("Of RUPTURES,", "Dr HALES,")
+INV_STOP_QUAL = {"Of", "On", "See", "The", "For", "After", "Before", "When",
+                 "While", "Whence", "If", "As", "Thus", "Hence", "In", "To", "By",
+                 "With", "From", "This", "That", "These", "Those", "But", "And",
+                 "Mr", "Mrs", "Dr", "Sir", "Mons", "Signor", "Saint"}
+
 
 # ----------------------------------------------------------------------------
 # text helpers
@@ -429,6 +442,16 @@ def detect_headword(p, trigram=None):
         if (len(lemma) >= 3 and lemma not in FUNC_CAPS and first_mod not in CONT_WORDS
                 and not STRUCTURAL.match(ptext) and trigram_lcp(lemma, trigram.upper()) >= 1):
             return _classify(lemma + mods, "allcaps_mod", trigram)
+    # inverted compound: "Sea-GAGE, ...", "Royal PREROGATIVE, ..." — qualifier then
+    # the ALL-CAPS lemma. Gate on the lemma aligning with the page trigram (>=2) and
+    # a qualifier that isn't a prose / section / person prefix.
+    m = INVERTED_COMPOUND.match(ptext)
+    if m and trigram:
+        full, lemma = m.group(1), m.group(2)
+        qual = re.split(r"[ -]", full, 1)[0]
+        if (qual not in INV_STOP_QUAL and not STRUCTURAL.match(ptext)
+                and trigram_lcp(lemma, trigram.upper()) >= 2):
+            return _classify(full, "inverted", trigram)
     return None
 
 
@@ -725,8 +748,8 @@ def process_volume(vol_dir: Path):
         loop_start = body_start
 
     records, cur = [], None
-    stats = {"articles": 0, "sub_entries": 0, "treatises": 0, "bold": 0,
-             "allcaps": 0, "allcaps_mod": 0, "runon": 0, "pages_body": 0, "pages_plate": 0}
+    stats = {"articles": 0, "sub_entries": 0, "treatises": 0, "bold": 0, "allcaps": 0,
+             "allcaps_mod": 0, "inverted": 0, "runon": 0, "pages_body": 0, "pages_plate": 0}
 
     def flush():
         nonlocal cur
@@ -903,7 +926,7 @@ def main():
             print(f"    articles={stats['articles']} sub_entries={stats['sub_entries']} "
                   f"treatises={stats['treatises']} | bold={stats['bold']} "
                   f"allcaps={stats['allcaps']} allcaps_mod={stats['allcaps_mod']} "
-                  f"runon={stats['runon']} | "
+                  f"inverted={stats['inverted']} runon={stats['runon']} | "
                   f"body_pages={stats['pages_body']} plate_pages={stats['pages_plate']}")
         for k, v in stats.items():
             grand[k] = grand.get(k, 0) + v
