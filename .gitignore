@@ -4,3 +4,6 @@ output/
 # Python
 __pycache__/
 *.pyc
+
+# Generated HTML review interface (regenerate with scripts/build_review_html.py)
+review_html/

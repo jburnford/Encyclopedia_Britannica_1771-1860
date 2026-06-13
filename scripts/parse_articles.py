@@ -51,6 +51,36 @@ STRUCTURAL = re.compile(
 ROMAN = re.compile(r"^[IVXLCDM]+\.?$")
 CROSSREF = re.compile(r"\bSee\s+([A-Z][A-Z&-]{1,}(?:\s+[A-Z][A-Z&-]+)*)")
 
+# printer's catchword: a trailing ALL-CAPS hyphen fragment ("… Hasselquist. ACRI-")
+# repeating the first syllable of the next page — OCR keeps it; strip from body tails.
+CATCHWORD = re.compile(rf"\s+[{_UC}][{_UC}&]+[­-]\s*$")
+# end-of-volume errata block ("Page 127. column 2. … read Plate XI. …") that bled into
+# the last dictionary entry; a dense run of these markers flags it for splitting out.
+ERRATA_HIT = re.compile(r"Page\s+\d+\.\s*(?:column|col\.?|line)", re.I)
+SIG_TAIL = re.compile(r"\s+\d?\s*[A-Z]\s*$")   # printer signature ("8 O") before errata
+
+# Buried sub-entry recall: a paragraph opening with an all-caps lemma + 1-2 LOWERCASE
+# modifier words + comma — "ABSINTHIATED medicines, ...", "ACCENSI ferenses, ...",
+# "CANINE teeth, ...". The plain ALLCAPS_HEAD misses these (it needs the comma right
+# after the caps run). Gated downstream by trigram alignment + the stoplists below to
+# reject prose that merely starts with a caps word ("THIS fever,", "HOFFMAN says,").
+# separator before the modifier is a space OR a hyphen, to also catch the Latin
+# binomial sub-entries "AGARICO-fungus, …", "AJURU-catinga, …", "ARRIERE-ban, …".
+ALLCAPS_MOD = re.compile(
+    rf"^\s*([{_UC}][{_UC}&]{{2,}})((?:[\s-]+[a-zà-ÿ][A-Za-zÀ-ÿ&-]*){{1,2}})\s*,\s+\S")
+# caps words that are function words / pronouns, never dictionary lemmas
+FUNC_CAPS = {"THIS", "THAT", "THESE", "THOSE", "THE", "THEY", "THEIR", "THERE",
+             "THEN", "THUS", "THAN", "WHEN", "WHICH", "WHERE", "WHILE", "WHO",
+             "WHOM", "WHOSE", "WHAT", "BUT", "AND", "FOR", "NOR", "YET", "ALL",
+             "SUCH", "SOME", "ITS", "HIS", "HER", "OUR", "YOUR", "NOT",
+             "NO", "AS", "IF", "SO", "BY", "ON", "AT", "TO", "OF", "IN", "OR"}
+# first lowercase modifier words that signal a sense-continuation, not a new lemma
+CONT_WORDS = {"is", "are", "was", "were", "be", "been", "being", "has", "had",
+              "have", "will", "would", "may", "might", "must", "can", "could",
+              "shall", "should", "does", "did", "also", "likewise", "denotes",
+              "signifies", "means", "says", "said", "properly", "sometimes",
+              "therefore", "however", "thus", "then", "moreover"}
+
 
 # ----------------------------------------------------------------------------
 # text helpers
@@ -66,6 +96,16 @@ def outer_html(el) -> str:
 def norm_caps(s: str) -> str:
     """Aggressive match key: keep letters only, uppercase. 'ANATOM Y.' -> 'ANATOMY'."""
     return re.sub(r"[^A-Z]", "", (s or "").upper())
+
+
+def trigram_lcp(word: str, tg_upper: str) -> int:
+    """Length of the common prefix between a word's letters and a page trigram."""
+    if not tg_upper:
+        return 0
+    w, n = norm_caps(word), 0
+    while n < len(tg_upper) and n < len(w) and w[n] == tg_upper[n]:
+        n += 1
+    return n
 
 
 # Fully letter-spaced multi-word treatise titles lose their word boundaries in
@@ -131,6 +171,31 @@ def extract_cross_refs(text: str):
         if ref and ref not in refs:
             refs.append(ref)
     return refs
+
+
+_SEE = re.compile(r"\bSee\b")
+_DOMAIN = re.compile(
+    r"^(?:a\s+(?:term|word|name)\s+(?:used\s+)?(?:in|of|among|amongst)"
+    r"|in|among|amongst|of|used\s+(?:in|among|amongst))\s+[^,.]+", re.I)
+
+
+def is_cross_reference(headword: str, body_text: str) -> bool:
+    """True for a bare redirect ('HARE, in zoology. See LEPUS.') whose only content
+    is the See-pointer plus an optional domain tag. Entries with a real definition
+    before the pointer ('ABDOMEN, the lower belly. See ANATOMY.') are NOT redirects:
+    after dropping the headword and one leading domain clause, the residual must be
+    empty for the entry to count as a cross-reference."""
+    b = (body_text or "").strip()
+    m = _SEE.search(b)
+    if not m:
+        return False
+    pre = b[:m.start()]
+    hw = (headword or "").strip()
+    if hw and pre[:len(hw)].upper() == hw.upper():     # strip the leading headword
+        pre = pre[len(hw):]
+    pre = pre.strip(" ,.;:")
+    pre = _DOMAIN.sub("", pre, count=1).strip(" ,.;:")  # strip one domain clause
+    return pre == ""
 
 
 # ----------------------------------------------------------------------------
@@ -225,7 +290,7 @@ class Headword:
         self.type, self.detected_by = type_, detected_by
 
 
-def _classify(full: str, detected_by: str):
+def _classify(full: str, detected_by: str, trigram=None):
     full = re.sub(r"\s+", " ", full).strip()
     display = full.rstrip(" .,:")
     if display.endswith("-") or display.endswith("­"):   # word-break fragment (TI-, SUBMIS-)
@@ -235,6 +300,28 @@ def _classify(full: str, detected_by: str):
         base = m.group(0)
         qualifier = display[:m.start()].strip(" ,.")
         tail = display[m.end():]
+        # Inverted headwords: EB alphabetises "HIGH ADMIRAL" under ADMIRAL and
+        # "MAGNETICAL AMPLITUDE" under AMPLITUDE, so the base (the grouping /
+        # grounding key) is the caps word the entry is filed under, not necessarily
+        # the first. The page running-head trigram is alphabetically aligned with
+        # that filing word, so pick the caps word with the longest common prefix
+        # with the trigram — but re-key onto a *later* word only when it strictly
+        # beats the first word's match (>=2 chars). This leaves genuine first-word
+        # entries (ABJURATION OF HERESY, trigram ABJ) untouched, while catching
+        # near-miss running heads (ROYAL AID under AID even when the head reads AIN).
+        if trigram and len(trigram) == 3:
+            tg = trigram.upper()
+            best, choice = trigram_lcp(base, tg), None
+            for mm in CAPS_WORD.finditer(display):
+                if mm.start() == m.start():
+                    continue
+                s = trigram_lcp(mm.group(0), tg)
+                if s >= 2 and s > best:
+                    best, choice = s, mm
+            if choice is not None:
+                base = choice.group(0)
+                qualifier = display[:choice.start()].strip(" ,.")
+                tail = display[choice.end():]
     elif re.fullmatch(rf"[{_UC}]", display):               # single-letter entry ("A")
         base, qualifier, tail = display, "", ""
     else:
@@ -251,7 +338,7 @@ def _classify(full: str, detected_by: str):
     return Headword(display, base, qualifier or None, type_, detected_by)
 
 
-def detect_headword(p):
+def detect_headword(p, trigram=None):
     kids = list(p)
     lead = (p.text or "")
     if kids and kids[0].tag == "b" and not lead.strip():
@@ -270,7 +357,7 @@ def detect_headword(p):
         ctx = full + (b.tail or "")
         if re.match(r"^\d", full) or STRUCTURAL.match(ctx) or ROMAN.match(full):
             return None
-        return _classify(full, "bold")
+        return _classify(full, "bold", trigram)
     # all-caps-plain headword. Match the FULL paragraph text (not just p.text):
     # some entries wrap the first word in <i> or have empty p.text, e.g.
     # '<i>COIX</i>, or JOB'S TEARS, ...' or 'COITION. See GENERATION.' — these
@@ -282,7 +369,20 @@ def detect_headword(p):
         cand = m.group(1).strip()
         if STRUCTURAL.match(ptext) or ROMAN.match(cand) or len(cand) < 3:
             return None
-        return _classify(cand, "allcaps")
+        return _classify(cand, "allcaps", trigram)
+    # buried sub-entry: caps lemma + lowercase modifier(s) + comma ("CANINE teeth, ...").
+    # Only accept when the lemma is alphabetically aligned with the page (trigram LCP
+    # >= 2) and is not a function word / sense-continuation — otherwise it is prose.
+    m = ALLCAPS_MOD.match(ptext)
+    if m and trigram:
+        lemma, mods = m.group(1), m.group(2)
+        first_mod = mods.lstrip(" -").split()[0].lower()
+        # gate: same first letter as the page running head (a page spans a letter's
+        # range, so the head's 2nd/3rd letter need not match the lemma), and not a
+        # function word / sense-continuation (those, not the trigram, reject prose).
+        if (len(lemma) >= 3 and lemma not in FUNC_CAPS and first_mod not in CONT_WORDS
+                and not STRUCTURAL.match(ptext) and trigram_lcp(lemma, trigram.upper()) >= 1):
+            return _classify(lemma + mods, "allcaps_mod", trigram)
     return None
 
 
@@ -302,14 +402,14 @@ def split_runon(p):
     return None
 
 
-def runon_headword(line):
+def runon_headword(line, trigram=None):
     """Headword for a run-on line: the text before the first comma/period."""
     if not _LINE_CAPS.match(line):
         return None
     head = re.split(r"[,.]", line, 1)[0].strip()
     if STRUCTURAL.match(line) or ROMAN.match(head):
         return None
-    return _classify(head, "runon")
+    return _classify(head, "runon", trigram)
 
 
 # ----------------------------------------------------------------------------
@@ -494,6 +594,7 @@ def finalize_record(cur: Record, meta):
         "headword": cur.hw.full, "base_headword": cur.hw.base,
         "qualifier": cur.hw.qualifier, "type": cur.hw.type,
         "detected_by": cur.hw.detected_by,
+        "is_cross_reference": is_cross_reference(cur.hw.full, body_text),
         "volume_num": meta.get("volume_num"), "eb_code": meta.get("eb_code"),
         "identifier": meta.get("identifier"), "alpha_range": meta.get("alpha_range"),
         "printed_page_start": cur.page_start, "printed_page_end": cur.page_end,
@@ -510,7 +611,7 @@ def finalize_treatise(tre: TreatiseAcc, outline, meta):
     body_text = clean_text(tre.text_parts)
     return {
         "headword": tre.title, "base_headword": tre.title, "qualifier": None,
-        "type": "treatise", "detected_by": "treatise",
+        "type": "treatise", "detected_by": "treatise", "is_cross_reference": False,
         "volume_num": meta.get("volume_num"), "eb_code": meta.get("eb_code"),
         "identifier": meta.get("identifier"), "alpha_range": meta.get("alpha_range"),
         "printed_page_start": tre.page_start, "printed_page_end": tre.page_end,
@@ -533,7 +634,7 @@ def find_body_start(pages, alpha0):
             if b.label != "Text":
                 continue
             for p in b.el.iter("p"):
-                hw = detect_headword(p)
+                hw = detect_headword(p, pg["head"].trigram)
                 if hw and hw.base[:1] == alpha0:
                     return pg["idx"]
     return pages[0]["idx"] if pages else 0
@@ -557,8 +658,8 @@ def process_volume(vol_dir: Path):
     spans = detect_treatise_spans(pages, body_start)
 
     records, cur = [], None
-    stats = {"articles": 0, "sub_entries": 0, "treatises": 0,
-             "bold": 0, "allcaps": 0, "runon": 0, "pages_body": 0, "pages_plate": 0}
+    stats = {"articles": 0, "sub_entries": 0, "treatises": 0, "bold": 0,
+             "allcaps": 0, "allcaps_mod": 0, "runon": 0, "pages_body": 0, "pages_plate": 0}
 
     def flush():
         nonlocal cur
@@ -580,13 +681,13 @@ def process_volume(vol_dir: Path):
             lines = split_runon(p)
             if lines:                                    # column of packed stub entries
                 for line in lines:
-                    hw = runon_headword(line)
+                    hw = runon_headword(line, pg["head"].trigram)
                     if hw:
                         open_record(hw, pg, b, f"<p>{line}</p>", line)
                     elif cur is not None:
                         cur.add("", line, pg)
                 continue
-            hw = detect_headword(p)
+            hw = detect_headword(p, pg["head"].trigram)
             if hw:
                 open_record(hw, pg, b, outer_html(p), text_of(p))
             elif cur is not None:
@@ -649,7 +750,52 @@ def process_volume(vol_dir: Path):
                 cur.add(outer_html(b.el), text_of(b.el), pg)
         i += 1
     flush()
+    records = postprocess(records)
+    stats["articles"] = sum(1 for r in records if r["type"] == "article")
+    stats["sub_entries"] = sum(1 for r in records if r["type"] == "sub_entry")
+    stats["treatises"] = sum(1 for r in records if r["type"] == "treatise")
     return records, stats, meta
+
+
+def postprocess(records):
+    """Three OCR-level cleanups applied after segmentation:
+      1. strip trailing printer catchwords ("… Hasselquist. ACRI-");
+      2. split an end-of-volume errata block out of the entry it bled into (BZO);
+      3. drop an empty-body headword stub when the next record repeats the lemma
+         (a headword printed at a column bottom, its text continuing overleaf).
+    """
+    stage = []
+    for r in records:
+        bt = CATCHWORD.sub("", r["body_text"]).rstrip()        # (1) catchword
+        if bt != r["body_text"]:
+            r["body_text"], r["char_count"] = bt, len(bt)
+        hits = list(ERRATA_HIT.finditer(r["body_text"]))       # (2) errata split
+        if len(hits) >= 3 and hits[0].start() > 30:
+            cut = hits[0].start()
+            head = SIG_TAIL.sub("", r["body_text"][:cut]).rstrip()
+            err = r["body_text"][cut:].strip()
+            r["body_text"], r["char_count"] = head, len(head)
+            stage.append(r)
+            erec = dict(r)
+            erec.update(headword="ERRATA", base_headword="ERRATA", qualifier=None,
+                        type="errata", detected_by="errata", is_cross_reference=False,
+                        body_text=err, body_html="<p>" + err + "</p>",
+                        cross_refs=extract_cross_refs(err)[:50], char_count=len(err))
+            erec.pop("outline", None)
+            stage.append(erec)
+        else:
+            stage.append(r)
+
+    out = []                                                   # (3) empty-body dedup
+    for i, r in enumerate(stage):
+        body = r["body_text"].strip().rstrip(".,")
+        head = r["headword"].strip().rstrip(".,")
+        nxt = stage[i + 1] if i + 1 < len(stage) else None
+        if (body == head and nxt is not None and nxt["type"] not in ("treatise", "errata")
+                and nxt.get("base_headword") == r.get("base_headword")):
+            continue                                           # stub; content is in nxt
+        out.append(r)
+    return out
 
 
 def write_jsonl(records, out_path: Path):
@@ -689,7 +835,8 @@ def main():
         if args.report:
             print(f"    articles={stats['articles']} sub_entries={stats['sub_entries']} "
                   f"treatises={stats['treatises']} | bold={stats['bold']} "
-                  f"allcaps={stats['allcaps']} runon={stats['runon']} | "
+                  f"allcaps={stats['allcaps']} allcaps_mod={stats['allcaps_mod']} "
+                  f"runon={stats['runon']} | "
                   f"body_pages={stats['pages_body']} plate_pages={stats['pages_plate']}")
         for k, v in stats.items():
             grand[k] = grand.get(k, 0) + v

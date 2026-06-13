@@ -34,21 +34,24 @@ Output: `output/EB.1/<id>/articles.jsonl`.
 
 ### EB.1 (1771 first edition) — all 3 volumes
 
-| Volume | Range | Records | articles | sub_entries | treatises |
-|--------|-------|--------:|---------:|------------:|----------:|
-| 144133901 v1 | A–B | 5,545 | 4,905 | 628 | 12 |
-| 144133902 v2 | C–L | 7,201 | 6,698 | 489 | 14 |
-| 144133903 v3 | M–Z | 6,205 | 5,983 | 205 | 17 |
-| **Total** | A–Z | **18,951** | **17,586** | **1,322** | **43** |
+| Volume | Range | Records | articles | sub_entries | treatises | errata |
+|--------|-------|--------:|---------:|------------:|----------:|-------:|
+| 144133901 v1 | A–B | 5,591 | 4,869 | 709 | 12 | 1 |
+| 144133902 v2 | C–L | 7,211 | 6,658 | 539 | 14 | 0 |
+| 144133903 v3 | M–Z | 6,196 | 5,946 | 233 | 17 | 0 |
+| **Total** | A–Z | **18,998** | **17,473** | **1,481** | **43** | **1** |
 
-Detection signals: **bold** at paragraph start 16,146 · **all-caps-plain** 2,549 · **run-on**
-(stub clusters split) 213 · **treatise** 43. Precision ~100% on hand-checked random samples;
-treatise inventory matches the canonical EB.1 set (ANATOMY 175pp, ASTRONOMY, CHEMISTRY, OPTICS,
-SURGERY, LAW = "Principles of the Law of Scotland", …).
+Detection signals: **bold** at paragraph start 16,146 · **all-caps-plain** 2,549 · **all-caps + lowercase
+modifier** (buried sub-entries: `CANINE teeth`, `AGARICO-fungus`) 98 · **run-on** (stub clusters split)
+213 · **treatise** 43. Precision ~100% on hand-checked random samples; treatise inventory matches the
+canonical EB.1 set (ANATOMY 175pp, ASTRONOMY, CHEMISTRY, OPTICS, SURGERY, LAW = "Principles of the Law
+of Scotland", …).
 
 ### Record schema
 
 `headword, base_headword, qualifier, type` (`article|sub_entry|treatise`), `detected_by`,
+`is_cross_reference` (bare "See X" redirect — 2,346 across EB.1; body is only the pointer + an
+optional domain tag, so a substantive-article count = non-treatise records with this false ≈ 16,562),
 `volume_num, eb_code, identifier, alpha_range, printed_page_start/end` (from the "( N )" running
 head), `image_page_start/end` (jsonl index), `body_text, body_html, cross_refs[], char_count,
 provenance{image_files, headword_bbox, headword_image}`. Treatises add a nested `outline[]`
@@ -59,12 +62,26 @@ provenance{image_files, headword_bbox, headword_image}`. Treatises add a nested 
 - **Headwords**: bold at paragraph start (drop-cap initials extended, e.g. `<b>A</b>NATOMY`→ANATOMY);
   all-caps-plain + comma as a recall fallback, matched on the *full* paragraph text so italic-wrapped
   / empty-`p.text` headwords are caught; run-on `<p>`s of stub entries split per line.
+- **`base_headword` (grouping/grounding key)**: defaults to the first caps word, but inverted
+  headwords (EB files "HIGH ADMIRAL" under ADMIRAL, "MAGNETICAL AMPLITUDE" under AMPLITUDE) are
+  re-keyed onto the caps word with the longest common prefix with the page running-head trigram
+  (its alphabetical filing position), with the leading words demoted to `qualifier`. Fires only when
+  a *later* word strictly beats the first, so genuine first-word entries (ABJURATION OF HERESY,
+  trigram ABJ) are untouched. Halved the first-letter ordering anomalies; ~60 records moved
+  article→sub_entry.
 - **Treatises** = gaps in the page-header trigram sequence (robust to OCR letter-spacing and
   recto/verso "Part II." alternation), with an h2-banner fallback for short running heads (LAW → "L").
 - **Reading order** = Chandra's native block order (a `(column,y)` re-sort was found to scramble
   multi-column pages — removed).
 - **Cross-references** ("See X") excluded structurally; structural markers ("PLATE IV", "FIG. 3")
   rejected only when followed by a number/roman.
+
+### Review interface
+
+`scripts/build_review_html.py` emits a self-contained HTML viewer per volume under `review_html/`
+(data embedded, opens from `file://`; records in page/reading order). Filters by type / detection
+signal / cross-ref, free-text search, and a **"problems only"** toggle surfacing heuristic error
+candidates (empty body, fragment, page-number anomaly, possible bleed — 43 flagged across EB.1).
 
 ### Validation
 
@@ -74,12 +91,25 @@ bleed (reading order), italic-first/empty-`p.text` headwords, `NON_HEADWORD` ove
 (CASE/BOOK/TABLE/FIGURE/INDEX), and plate-caption bleed. Net recovered ~490 records vs. the first
 pass and eliminated the large bleed cases.
 
+**Second audit round** (external review, two LLM passes). Fixes applied: (a) `base_headword` re-keyed
+for inverted headwords via running-head trigram; (b) `is_cross_reference` flag for bare redirects;
+(c) **buried sub-entry recall** — a paragraph opening `CAPS + lowercase/hyphen modifier + comma`
+(`ABSINTHIATED medicines`, `AGARICO-fungus`) is now split out, gated by same-first-letter trigram
+alignment + function-word/continuation stoplists (98 recovered, 0 prose false-positives on full audit);
+(d) trailing printer **catchwords** stripped (`… Hasselquist. ACRI-`, ~30); (e) end-of-volume **errata**
+block split out of the entry it bled into (BZO); (f) **empty-body dedup** — a column-bottom headword
+stub is dropped when the next record repeats the lemma (57 → 5). Several reported "merges" were
+verified *correct* in the data (ACORUM/ACORUS, ACROTERIA/ACRITHYMIA distinct) or hallucinated.
+
 ### Known limitations (OCR-level, acceptable for the pilot)
 
-- ~57 records with `body == headword` — standalone `<p><b>X</b></p>` whose definition attached elsewhere.
-- Occasional two entries merged when OCR joins them in one `<p>` with no separator (e.g. "c. 2.CALLUS").
-- ~3 dict pages dropped where an article starts at the *bottom* of a treatise's last page
-  (treatise ends are mid-page; only starts are split).
+- 5 records with `body == headword` — standalone `<p><b>X</b></p>` whose definition attached elsewhere.
+- Two entries merged when OCR joins them in **one `<p>`** with no separator (e.g. "c. 2.CALLUS",
+  `ADENOSE`/`ALVI fluxus`) — not splittable at the paragraph level.
+- Buried sub-entries with a **3+ word** Latin modifier before the comma (`ARRESTO facto super bonis`)
+  stay merged: the recall rule caps the modifier at 2 words to keep prose precision at 100%.
+- Source **OCR transcription** errors are preserved verbatim (`anno 1491` for 1492, `wife`/`wise`,
+  doubled words) — these are not parser errors and would need a separate OCR-correction pass.
 - Fully letter-spaced *outline* labels can run together ("PARTI.", "OFTHEBONES.").
 
 ---
