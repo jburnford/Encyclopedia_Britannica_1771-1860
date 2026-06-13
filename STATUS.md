@@ -26,21 +26,21 @@ Chandra 2 on Nibi H100s, headers/footers kept. See `README.md` for the pipeline.
 - **163 HTML files** committed and pushed to GitHub
   (`github.com/jburnford/Encyclopedia_Britannica_1771-1860`, public).
 
-## Stage 3 — Article parsing (EB.1 + EB.4 complete)
+## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 complete)
 
 `scripts/parse_articles.py` segments the page-stream into one record per dictionary headword,
-with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.4 --report`.
+with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.5 --report`.
 Output: `article_data/<eb>_<edition>_v<NN>_<alpha>_<id>.jsonl`.
 
 **Edition profiles.** The core segmentation is shared across editions; an `EDITION_PROFILES` dict
 toggles only the parts that differ (unknown editions fall back to 1st-edition behaviour):
 
-| key | EB.1 | EB.4 | effect |
-|-----|------|------|--------|
-| `margin_notes` | off | on | drop outer-margin side-glosses / footnotes (2nd ed. only) from bodies |
-| `multivol` | off | on | a volume may open mid-treatise (vol 2 = `Astronomy-BZO`); capture the continuation |
+| key | EB.1 | EB.4 | EB.5 | effect |
+|-----|------|------|------|--------|
+| `margin_notes` | off | on | on | drop outer-margin side-glosses / footnotes (2nd ed. on) from bodies |
+| `multivol` | off | on | on | a volume may open mid-treatise (`Astronomy-BZO`, `Hydrostatics-LES`); capture it |
 
-Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4) — edition-agnostic.
+Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4/EB.5) — edition-agnostic.
 
 ### EB.1 (1771 first edition) — all 3 volumes
 
@@ -83,6 +83,18 @@ set** (page numbers run to ~9000), not per-volume — so absolute page threshold
 
 The current parser **out-of-the-box** segmented EB.4 cleanly; the only real adaptations were the three
 profile items above. Verified by sampling; the segmentation precision looks comparable to EB.1.
+
+### EB.5 (1797 third edition) — all 18 volumes
+
+**27,483 records** (25,366 articles · 2,024 sub-entries · 92 treatises · 1 errata), 0.6% missing a
+printed page, 0 OCR-repetition duplicates. Reusing the EB.4 profile (`margin_notes` + `multivol`)
+worked directly — margin pollution dropped 104 → 31 per volume, and mid-treatise opens
+(`Hydrostatics-LES`, `Medals-Midwifery`) capture their continuation. The 3rd edition's treatises are
+enormous (vol 11 `MEDICINE` alone is ~1.97M chars; `METAPHYSICS` 875K). Treatise inventory matches the
+canonical set (ANATOMY, ASTRONOMY, CHEMISTRY, COMPARATIVE ANATOMY, ELECTRICITY, OPTICS, SURGERY, …).
+A handful of treatise *labels* are off — plate sequences picked up a genus running head
+(`CAPRA`, `MYRISTICA`), and end-of-volume inserts (`OMISSION`, an `ERRATA`) — but no dictionary
+content is lost (surrounding entries verified present); these are cosmetic.
 
 ### Record schema
 

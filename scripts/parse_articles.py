@@ -47,6 +47,7 @@ DEFAULT_PROFILE = {
 EDITION_PROFILES = {
     "EB.1": {"margin_notes": False, "multivol": False},   # 1771, 3 vols, A-B/C-L/M-Z
     "EB.4": {"margin_notes": True,  "multivol": True},     # 1778-83, 10 vols, marginal glosses
+    "EB.5": {"margin_notes": True,  "multivol": True},     # 1797, 18 vols, same layout as EB.4
 }
 
 
@@ -176,6 +177,10 @@ TREATISE_DISPLAY = {
     "LISTOFAUTHORS": "LIST OF AUTHORS",
     "CRAYONPAINTING": "CRAYON-PAINTING",
     "SHIPBUILDING": "SHIP-BUILDING",
+    # EB.5 (3rd ed.)
+    "ANATOMYOFPLANTS": "ANATOMY OF PLANTS",
+    "PROJECTIONOFTHESPHERE": "PROJECTION OF THE SPHERE",
+    "NAVALTACTICS": "NAVAL TACTICS",
 }
 
 
