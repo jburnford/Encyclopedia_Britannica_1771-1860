@@ -897,7 +897,30 @@ def postprocess(records):
                 and nxt.get("base_headword") == r.get("base_headword")):
             continue                                           # stub; content is in nxt
         out.append(r)
+
+    repair_gamboge_game(out)
     return out
+
+
+def repair_gamboge_game(records):
+    """Hard-coded repair for the EB.4 vol-5 (id 144850376) OCR repetition loop: the
+    surviving long GAMBOGE record is GAMBOGE's opening welded to the entire GAME
+    article. A clean GAMBOGE record already exists, so relabel this one as GAME,
+    dropping the duplicated GAMBOGE opening. Re-OCR of the page is the proper fix;
+    this recovers the GAME article in the meantime."""
+    for r in records:
+        if (r.get("identifier") == "144850376" and r.get("base_headword") == "GAMBOGE"
+                and "Game. of pursuing" in r["body_text"]):
+            cut = r["body_text"].find("Game. of pursuing")
+            body = "GAME, " + r["body_text"][cut + len("Game. "):]
+            ps = re.findall(r"<p>.*?</p>", r["body_html"], re.S)
+            html = "\n".join(ps[1:]) if len(ps) > 1 else "<p>" + body + "</p>"
+            html = re.sub(r"^(<p>)\s*Game\.\s*", r"\1GAME, ", html, count=1)
+            r.update(headword="GAME", base_headword="GAME", qualifier=None,
+                     type="article", detected_by="hardcoded", is_cross_reference=False,
+                     body_text=body, body_html=html, char_count=len(body),
+                     cross_refs=extract_cross_refs(body)[:50])
+            break
 
 
 def write_jsonl(records, out_path: Path):

@@ -157,8 +157,9 @@ recovered across both editions, 0 false-positives on full audit; e.g. `GAGE` now
 - Fully letter-spaced *outline* labels can run together ("PARTI.", "OFTHEBONES.").
 - **OCR repetition loops**: the Chandra VLM occasionally gets stuck and emits one paragraph many
   times on a page (vol 5 page produced `GAMBOGE` ×72). A postprocess pass collapses consecutive
-  identical records (only EB.4 vol 5 was affected — 70 removed); the residual is one merged
-  `GAMBOGE`→`GAME` blob where the next article's text is trapped. The clean fix is re-OCR of that page.
+  identical records (only EB.4 vol 5 was affected — 70 removed). The leftover `GAMBOGE`→`GAME` weld
+  is hard-coded apart in `repair_gamboge_game()` (clean `GAMBOGE` + recovered `GAME` article); the
+  proper fix is re-OCR of that page, after which the hard-coded patch becomes a no-op.
 - **EB.4**: 1 of 71 treatises mis-titled (`OFFLOWERS` — a path-2 banner grabbed a section header
   instead of the dissertation title; content is preserved, only the title is wrong). Cross-volume
   treatises (ASTRONOMY, OPTICS) are captured as one record per volume, not yet stitched into a single
