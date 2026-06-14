@@ -33,6 +33,27 @@ from lxml import etree
 COL_SPLIT = 500          # bbox x1 < 500 => left column, else right column
 MIN_TREATISE_PAGES = 2   # a trigram-gap run this long with a word running head
 NONWORD_HEAD = ("PLATE", "FIG", "PART", "CHAP", "SECT")   # not treatise titles
+# treatise-internal section labels ("RULE", "EXAMP.", "PROB. I", "COR.", "QUEST.")
+# that the 4th-edition math articles (Annuities, Algebra, Arithmetic) print in caps
+# and the OCR bolds. STRUCTURAL already drops the numbered forms ("CASE 1"); these
+# are the BARE / abbreviated ones. A real dictionary entry (CASE, RULE, LEMMA, COR
+# = the heart) files under its own letter, so it survives the trigram gate below;
+# a label inside a treatise sits on a foreign-trigram (or header-less) page and is
+# absorbed into the running article instead of opening a junk record.
+SECTION_WORDS = {"RULE", "EXAMPLE", "EXAMP", "EXAM", "PROB", "PROBL", "PROBLEM",
+                 "COR", "COROLL", "COROLLARY", "QUEST", "QUESTION", "SCHOL",
+                 "SCHOLIUM", "LEMMA", "AXIOM", "THEOR", "THEOREM", "PROP",
+                 "PROPOSITION", "CASE", "SOLUTION", "REMARK", "DEFINITION"}
+
+
+def is_treatise_section(full, trigram):
+    """True for a bare treatise section label that should NOT open a record: the
+    leading caps word is a section keyword and it is not alphabetically aligned with
+    the page running head (no dict header, or trigram LCP < 2)."""
+    base = re.split(r"[ .,-]", full, 1)[0].upper()
+    if base not in SECTION_WORDS:
+        return False
+    return not trigram or trigram_lcp(base, trigram.upper()) < 2
 
 # ----------------------------------------------------------------------------
 # edition profiles — the few things that differ between editions. The core
@@ -48,6 +69,7 @@ EDITION_PROFILES = {
     "EB.1": {"margin_notes": False, "multivol": False},   # 1771, 3 vols, A-B/C-L/M-Z
     "EB.4": {"margin_notes": True,  "multivol": True},     # 1778-83, 10 vols, marginal glosses
     "EB.5": {"margin_notes": True,  "multivol": True},     # 1797, 18 vols, same layout as EB.4
+    "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
 }
 
 
@@ -181,6 +203,9 @@ TREATISE_DISPLAY = {
     "ANATOMYOFPLANTS": "ANATOMY OF PLANTS",
     "PROJECTIONOFTHESPHERE": "PROJECTION OF THE SPHERE",
     "NAVALTACTICS": "NAVAL TACTICS",
+    # EB.9 (4th ed.)
+    "MATERIAMEDICAC": "MATERIA MEDICA",
+    "LAWOFENGLAND": "LAW OF ENGLAND",
 }
 
 
@@ -421,6 +446,8 @@ def detect_headword(p, trigram=None):
         ctx = full + (b.tail or "")
         if re.match(r"^\d", full) or STRUCTURAL.match(ctx) or ROMAN.match(full):
             return None
+        if is_treatise_section(full, trigram):
+            return None
         return _classify(full, "bold", trigram)
     # all-caps-plain headword. Match the FULL paragraph text (not just p.text):
     # some entries wrap the first word in <i> or have empty p.text, e.g.
@@ -432,6 +459,8 @@ def detect_headword(p, trigram=None):
     if m:
         cand = m.group(1).strip()
         if STRUCTURAL.match(ptext) or ROMAN.match(cand) or len(cand) < 3:
+            return None
+        if is_treatise_section(cand, trigram):
             return None
         return _classify(cand, "allcaps", trigram)
     # buried sub-entry: caps lemma + lowercase modifier(s) + comma ("CANINE teeth, ...").
@@ -731,7 +760,11 @@ def process_volume(vol_dir: Path):
             pages.append({"idx": idx, "image": rec.get("image", ""),
                           "blocks": blocks, "head": head})
 
-    alpha0 = (meta.get("alpha_range") or "A")[0].upper()
+    # EB.9 (4th ed) splits each volume into "Part 1, AME-ANS" / "Part 2, ...": strip
+    # the "Part N, " scan-split prefix so the alpha range drives body-start / opener.
+    alpha_range = re.sub(r"^\s*Part\s+[\dIVXLC]+\s*,\s*", "",
+                         (meta.get("alpha_range") or "A"), flags=re.I)
+    alpha0 = (alpha_range or "A")[0].upper()
     body_start = find_body_start(pages, alpha0)
     if prof["multivol"]:
         # multi-volume editions split treatises across volume boundaries: a volume
@@ -742,7 +775,7 @@ def process_volume(vol_dir: Path):
         # capturing the continuation — otherwise front matter (PREFACE) would be
         # mis-captured and find_body_start lands on a stray headword inside it.
         spans = detect_treatise_spans(pages, 0)
-        opener = norm_caps((meta.get("alpha_range") or "").split("-")[0])
+        opener = norm_caps(alpha_range.split("-")[0])
         lead = None
         if len(opener) >= 4:                       # a treatise title, not "A"/"AST"
             lead = next((s for s in sorted(spans)

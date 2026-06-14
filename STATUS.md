@@ -26,21 +26,31 @@ Chandra 2 on Nibi H100s, headers/footers kept. See `README.md` for the pipeline.
 - **163 HTML files** committed and pushed to GitHub
   (`github.com/jburnford/Encyclopedia_Britannica_1771-1860`, public).
 
-## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 complete)
+## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 + EB.9 complete)
 
 `scripts/parse_articles.py` segments the page-stream into one record per dictionary headword,
-with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.5 --report`.
+with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.9 --report`.
 Output: `article_data/<eb>_<edition>_v<NN>_<alpha>_<id>.jsonl`.
+
+> **Edition-code ≠ edition-number.** The NLS `eb_code` is a shelfmark, not the edition ordinal:
+> EB.1 = 1st (1771), EB.4 = 2nd (1778–83), EB.5 = 3rd (1797), EB.7 = Suppl. to 3rd (1801),
+> **EB.9 = 4th (1810)**, EB.10 = 5th, EB.11 = 6th, EB.12 = Suppl. to 4/5/6, EB.15 = 7th, EB.16 = 8th.
 
 **Edition profiles.** The core segmentation is shared across editions; an `EDITION_PROFILES` dict
 toggles only the parts that differ (unknown editions fall back to 1st-edition behaviour):
 
-| key | EB.1 | EB.4 | EB.5 | effect |
-|-----|------|------|------|--------|
-| `margin_notes` | off | on | on | drop outer-margin side-glosses / footnotes (2nd ed. on) from bodies |
-| `multivol` | off | on | on | a volume may open mid-treatise (`Astronomy-BZO`, `Hydrostatics-LES`); capture it |
+| key | EB.1 | EB.4 | EB.5 | EB.9 | effect |
+|-----|------|------|------|------|--------|
+| `margin_notes` | off | on | on | on | drop outer-margin side-glosses / footnotes (2nd ed. on) from bodies |
+| `multivol` | off | on | on | on | a volume may open mid-treatise (`Astronomy-BZO`, `Hydrostatics-LES`, `Agriculture-AME`); capture it |
 
-Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4/EB.5) — edition-agnostic.
+Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4/EB.5/EB.9) — edition-agnostic.
+The `alpha_range` is stripped of EB.9's `"Part N, "` scan-split prefix before it drives body-start
+and the lead-treatise opener (else `find_body_start` keys on letter "P" and skips the volume front).
+**Treatise-section gate:** bare math labels (`RULE`, `EXAMP.`, `PROB. I`, `COR.`, `QUEST.`) inside
+the long math articles are dropped unless aligned with the page running head (trigram LCP ≥ 2), so a
+real entry (`CASE`, `RULE OF THREE`, `COR CAROLI`) survives but a treatise-internal label is absorbed
+into the running article (124→27 in EB.9; also trimmed EB.1 −9, EB.4 −37, EB.5 −88).
 
 ### EB.1 (1771 first edition) — all 3 volumes
 
@@ -95,6 +105,24 @@ canonical set (ANATOMY, ASTRONOMY, CHEMISTRY, COMPARATIVE ANATOMY, ELECTRICITY, 
 A handful of treatise *labels* are off — plate sequences picked up a genus running head
 (`CAPRA`, `MYRISTICA`), and end-of-volume inserts (`OMISSION`, an `ERRATA`) — but no dictionary
 content is lost (surrounding entries verified present); these are cosmetic.
+
+### EB.9 (1810 fourth edition) — all 20 volumes (40 scan-parts)
+
+**29,769 records** (27,250 articles · 2,402 sub-entries · 117 treatises), mean **97.4 %** of images
+covered per part (rest is plates / front-matter), 0 OCR-repetition duplicates. EB.9 is the same layout
+family as EB.4/EB.5 — the only structural novelty is that each physical volume is scanned as two parts
+(`Part 1, AME-ANS` / `Part 2, Agriculture-AME`). Two adaptations were needed beyond reusing the profile:
+(1) **strip the `"Part N, "` prefix** from `alpha_range` so body-start/opener key on the real letter —
+without this a Part-1 volume keyed on "P", `find_body_start` jumped to a stray `PROBLEM` deep inside,
+and the entire front of the volume (e.g. the 800K-char `ANATOMY` dissertation in vol 2) was silently
+dropped; (2) the **treatise-section gate** (above), since the 4th edition prints far more worked-math
+articles (`ANNUITIES`, `ALGEBRA`, `ARITHMETIC`) whose `RULE`/`EXAMP.`/`PROB.` labels were fragmenting
+the articles. The 4th-edition dissertation set is captured in full: `CHEMISTRY` (2.10M chars),
+`BOTANY`, `MEDICINE`, `ASTRONOMY`, `ELECTRICITY`, `ANATOMY`, `OPTICS`, `GEOLOGY`, `PHYSIOLOGY`,
+`MINERALOGY`, `SURGERY`, `MATERIA MEDICA`, `LAW OF ENGLAND`, … A few small (<4K-char) treatises are
+mis-titled where a plate list inherited a running head (`BRIDGE`, `CLOCK`, `TELESCOPE`); no content lost.
+The massive `AMERICA` article (~100 pp, filed under "AME") stays one *article* rather than a treatise
+because its running head never breaks alphabetical filing — captured whole, the label is cosmetic.
 
 ### Record schema
 
@@ -182,9 +210,10 @@ recovered across both editions, 0 false-positives on full audit; e.g. `GAGE` now
 
 ## Next steps
 
-1. **Continue to the remaining editions** (EB.5 3rd … EB.16 8th). EB.1 + EB.4 done; the
-   `EDITION_PROFILES` mechanism is in place, so each new edition should need only a profile entry
-   plus spot-checking (layout, running-head conventions, treatise sets).
+1. **Continue to the remaining editions** (EB.7 Suppl., EB.10 5th, EB.11 6th, EB.12 Suppl.,
+   EB.15 7th, EB.16 8th). EB.1 + EB.4 + EB.5 + EB.9 done; the `EDITION_PROFILES` mechanism is in
+   place, so each new edition should need only a profile entry plus spot-checking (layout,
+   running-head conventions, treatise sets, and — for part-split scans — the `"Part N, "` prefix).
 2. **Ground headwords to Wikidata** (use the WikidataMCP vector search; the `headword-disambig` skill).
 3. Optionally: stitch cross-volume treatises into single records; address the OCR-level limitations.
 
