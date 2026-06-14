@@ -9,3 +9,6 @@ __pycache__/
 review_html/
 headword_candidates.jsonl
 absorbed_candidates.jsonl
+
+# Resumable repair batch files (regenerate with make_repair_batches.py)
+repair_batches/

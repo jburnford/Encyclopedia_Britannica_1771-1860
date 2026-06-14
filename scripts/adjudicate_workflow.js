@@ -35,8 +35,9 @@ const DECISION_SCHEMA = {
 }
 
 const INSTRUCTIONS = `You are correcting OCR errors in Encyclopaedia Britannica article headwords.
-The same articles recur across six editions, so a headword spelling found in only ONE edition is
-suspect when a near-identical spelling is confirmed in OTHER editions at the same alphabetical slot.
+The same articles recur across ten editions (1771-1860), so a headword spelling found in only ONE
+edition is suspect when a near-identical spelling is confirmed in OTHER editions at the same
+alphabetical slot.
 
 Each candidate has:
   v   = the variant headword (appears in only one edition)
