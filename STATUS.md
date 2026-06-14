@@ -154,8 +154,34 @@ by re-OCR or a fuzzy headword-normalisation pass before grounding.
 **30,397 records** (27,393 articles · 2,863 sub-entries · 141 treatises), mean **97.3 %** coverage,
 0 truncation. Same family as EB.10; profile reused unchanged.
 
-### Cross-edition headword reconciliation (in progress — see "OCR headword repair" below)
+### OCR headword repair (cross-edition reconciliation)
 
+The six editions are largely re-set reprints, so the same headword recurs across them. That
+redundancy is used to detect and correct OCR-garbled headwords. Three-stage pipeline:
+
+1. **`scripts/headword_reconcile.py`** — deterministic detector. A headword spelling in only ONE
+   edition ("CONSTANTINOPE") is suspect when a near spelling is confirmed in others at the same
+   alphabetical slot. Four precision filters: alphabetical adjacency, shared prefix, edit-distance ≤2,
+   and the **co-occurrence test** (if the singleton's own edition also has the candidate spelling they
+   are distinct real words — an edition won't hold EASTER and a mangled EASTER). 7,426 singletons →
+   **2,961 candidates** with ranked suggestions + body snippet → `headword_candidates.jsonl`.
+2. **`scripts/adjudicate_workflow.js`** — LLM fan-out (Workflow): candidates batched, agents return
+   structured `correct`/`keep` + canonical. Editions can't decide the final call alone (the corpus is
+   full of distinct Latin/genus/place names 1–2 edits apart: CALAMITES≠CALAMINE); the LLM is the
+   tie-breaker, with the editions framing each decision. Run on **Sonnet** (Haiku was inconsistent
+   batch-to-batch). → `headword_decisions.jsonl` (948 correct, 2,013 keep).
+3. **`scripts/apply_headword_fixes.py`** — overwrites `headword`/`base_headword` with the canonical;
+   stashes the OCR originals in `provenance.raw_headword`/`raw_base_headword` and records
+   `provenance.headword_correction`. Body text is left untouched (faithful OCR).
+
+**Result: 981 records corrected** (e.g. `ALSFIELD→ALSFELD`, `SCHILD→SCHELD`, `AMALFA→AMALFI`,
+`VERTUMINUS→VERTUMNUS`). EB.9↔EB.10 base-headword overlap rose 22,524 → 22,768. Record counts
+unchanged (headword-only edit). Re-runnable end-to-end as the corpus grows.
+
+Not yet addressed: the "absorbed article" class (PERSIA welded under PERSEUS) — a headword missing
+with no singleton variant; needs body-splitting, a separate harder track (~200–400 cases).
+
+### Record schema
 ### Record schema
 
 `headword, base_headword, qualifier, type` (`article|sub_entry|treatise`), `detected_by`,
