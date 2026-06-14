@@ -31,7 +31,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-EDS = ["EB.1", "EB.4", "EB.5", "EB.9", "EB.10", "EB.11"]
+EDS = ["EB.1", "EB.4", "EB.5", "EB.7", "EB.9", "EB.10", "EB.11", "EB.12", "EB.15", "EB.16"]
 WINDOW = 30          # alphabetical neighbourhood half-width for candidate search
 MAX_EDIT = 2
 

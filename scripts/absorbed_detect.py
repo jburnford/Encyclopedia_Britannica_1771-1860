@@ -26,7 +26,7 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
-CORE = ["EB.4", "EB.5", "EB.9", "EB.10", "EB.11"]
+CORE = ["EB.4", "EB.5", "EB.7", "EB.9", "EB.10", "EB.11", "EB.12", "EB.15", "EB.16"]
 
 
 def norm(s):
