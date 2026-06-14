@@ -73,6 +73,7 @@ EDITION_PROFILES = {
     "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
     "EB.10": {"margin_notes": True, "multivol": True},     # 1815, 5th ed, 20 vols (not part-split)
     "EB.11": {"margin_notes": True, "multivol": True},     # 1823, 6th ed, 20 vols (not part-split)
+    "EB.12": {"margin_notes": True, "multivol": True},     # 1824, Suppl. to 4/5/6, 6 vols (alpha_range null)
 }
 
 
@@ -118,6 +119,14 @@ STRUCTURAL = re.compile(
     r"\.?\s*(?:[IVXLC]+\b|\d)", re.I)
 ROMAN = re.compile(r"^[IVXLCDM]+\.?$")
 CROSSREF = re.compile(r"\bSee\s+([A-Z][A-Z&-]{1,}(?:\s+[A-Z][A-Z&-]+)*)")
+# A marginal article-name side-gloss that Chandra OCR sometimes merges into the body
+# block as a leading Title-case token in front of the real headword:
+#   "Academy. ACADEMY. An enumeration …", "Baking. BAKING, the process …"
+# (common in the EB.12 supplement). Strip it so the all-caps headword is detected.
+# The trailing lookahead demands a 3+ letter caps run (a headword) right after the
+# gloss period, so a numbered sub-section gloss ("… Lisbon. II.") or a continuation
+# ("Academy. continued …") does NOT match and stays absorbed in the current article.
+SIDE_GLOSS = re.compile(rf"^\s*[{_UC}][a-zà-ÿ]+(?:[ -][A-Za-zà-ÿ]+){{0,3}}\.\s+(?=[{_UC}]{{3,}})")
 
 # printer's catchword: a trailing ALL-CAPS hyphen fragment ("… Hasselquist. ACRI-")
 # repeating the first syllable of the next page — OCR keeps it; strip from body tails.
@@ -465,6 +474,11 @@ def detect_headword(p, trigram=None):
     # at p.text. The bold branch above already handled the bold case.
     ptext = text_of(p)
     m = ALLCAPS_HEAD.match(ptext)
+    if not m:                                          # retry past a merged side-gloss
+        stripped = SIDE_GLOSS.sub("", ptext, count=1)
+        if stripped != ptext and ALLCAPS_HEAD.match(stripped):
+            ptext = stripped
+            m = ALLCAPS_HEAD.match(ptext)
     if m:
         cand = m.group(1).strip()
         if STRUCTURAL.match(ptext) or ROMAN.match(cand) or len(cand) < 3:
@@ -752,6 +766,28 @@ def find_body_start(pages, alpha0):
     return pages[0]["idx"] if pages else 0
 
 
+# a 3-letter running-head token that is a valid Roman numeral (XXV, XIX, CLI ...).
+# The EB.12 supplement prefaces paginate in Roman numerals, which parse_page_header
+# captures as [A-Z]{3} "trigrams"; they must be ignored when inferring a volume's
+# opening dictionary letter (else alpha0 becomes "X"/"C" off a page number).
+ROMAN_TRIGRAM = re.compile(r"^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$")
+
+
+def derive_alpha0(pages):
+    """Infer a volume's opening dictionary letter when metadata carries no
+    alpha_range (the EB.12 supplement volumes). Scan for the first alphabetical
+    running-head trigram, skipping Roman-numeral preface page numbers, and confirm
+    it with a following trigram on the same or a later letter so a lone stray glyph
+    does not set the start. Falls back to "A"."""
+    trigrams = [pg["head"].trigram for pg in pages if pg["head"].trigram]
+    real = [t for t in trigrams if not ROMAN_TRIGRAM.match(t)]
+    for k, t in enumerate(real):
+        nxt = real[k + 1:k + 4]
+        if not nxt or any(t2[0] >= t[0] for t2 in nxt):
+            return t[0]
+    return real[0][0] if real else "A"
+
+
 def process_volume(vol_dir: Path):
     meta = json.loads((vol_dir / "metadata.json").read_text())
     prof = profile_for(meta)
@@ -771,9 +807,16 @@ def process_volume(vol_dir: Path):
 
     # EB.9 (4th ed) splits each volume into "Part 1, AME-ANS" / "Part 2, ...": strip
     # the "Part N, " scan-split prefix so the alpha range drives body-start / opener.
-    alpha_range = re.sub(r"^\s*Part\s+[\dIVXLC]+\s*,\s*", "",
-                         (meta.get("alpha_range") or "A"), flags=re.I)
-    alpha0 = (alpha_range or "A")[0].upper()
+    # EB.12 supplement volumes carry no alpha_range: infer the opening dictionary
+    # letter from the running heads so find_body_start skips the leading
+    # dissertation(s) instead of defaulting to "A" and misfiring on a stray glyph.
+    alpha_unknown = meta.get("alpha_range") is None
+    if alpha_unknown:
+        alpha_range = alpha0 = derive_alpha0(pages)
+    else:
+        alpha_range = re.sub(r"^\s*Part\s+[\dIVXLC]+\s*,\s*", "",
+                             (meta.get("alpha_range") or "A"), flags=re.I)
+        alpha0 = (alpha_range or "A")[0].upper()
     body_start = find_body_start(pages, alpha0)
     if prof["multivol"]:
         # multi-volume editions split treatises across volume boundaries: a volume
@@ -789,6 +832,12 @@ def process_volume(vol_dir: Path):
         if len(opener) >= 4:                       # a treatise title, not "A"/"AST"
             lead = next((s for s in sorted(spans)
                          if s < body_start and spans[s]["title_norm"][:5] == opener[:5]), None)
+        elif alpha_unknown:
+            # No alpha_range to name the opener: each EB.12 supplement volume leads
+            # with a long dissertation / treatise continuation before the dictionary
+            # body. Start at the earliest treatise span so those are captured rather
+            # than skipped — the loop then runs contiguously through to the body.
+            lead = next((s for s in sorted(spans) if s < body_start), None)
         loop_start = lead if lead is not None else body_start
     else:
         spans = detect_treatise_spans(pages, body_start)
