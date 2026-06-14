@@ -67,6 +67,7 @@ DEFAULT_PROFILE = {
 }
 EDITION_PROFILES = {
     "EB.1": {"margin_notes": False, "multivol": False},   # 1771, 3 vols, A-B/C-L/M-Z
+    "EB.7": {"margin_notes": True,  "multivol": True},     # 1801, Suppl. to 3rd ed, 2 vols (ABE-IMP/IND-ZEM)
     "EB.4": {"margin_notes": True,  "multivol": True},     # 1778-83, 10 vols, marginal glosses
     "EB.5": {"margin_notes": True,  "multivol": True},     # 1797, 18 vols, same layout as EB.4
     "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
