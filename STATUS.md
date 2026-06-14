@@ -26,7 +26,7 @@ Chandra 2 on Nibi H100s, headers/footers kept. See `README.md` for the pipeline.
 - **163 HTML files** committed and pushed to GitHub
   (`github.com/jburnford/Encyclopedia_Britannica_1771-1860`, public).
 
-## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 + EB.9 + EB.10 complete)
+## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 + EB.9 + EB.10 + EB.11 complete)
 
 `scripts/parse_articles.py` segments the page-stream into one record per dictionary headword,
 with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.9 --report`.
@@ -44,7 +44,7 @@ toggles only the parts that differ (unknown editions fall back to 1st-edition be
 | `margin_notes` | off | on | on | on | drop outer-margin side-glosses / footnotes (2nd ed. on) from bodies |
 | `multivol` | off | on | on | on | a volume may open mid-treatise (`Astronomy-BZO`, `Hydrostatics-LES`, `Agriculture-AME`); capture it |
 
-(EB.10, the 5th ed., reuses the same `margin_notes` + `multivol` profile; it is not part-split.)
+(EB.10 5th ed. and EB.11 6th ed. reuse the same `margin_notes` + `multivol` profile; neither is part-split.)
 
 Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4+) — edition-agnostic.
 **Headword delimiter:** an all-caps headword is recognised when followed by a comma/period
@@ -148,6 +148,13 @@ The cross-check surfaced the paren-headword bug (above). Every large article tha
 `PERSEUS` (142K), `INSTINCT` under `INSTEP` (67K). These are OCR-quality issues (a dropped letter or a
 heading the VLM didn't set off), not segmentation errors — flagged as a known limitation, fixable only
 by re-OCR or a fuzzy headword-normalisation pass before grounding.
+
+### EB.11 (1823 sixth edition) — all 20 volumes
+
+**30,397 records** (27,393 articles · 2,863 sub-entries · 141 treatises), mean **97.3 %** coverage,
+0 truncation. Same family as EB.10; profile reused unchanged.
+
+### Cross-edition headword reconciliation (in progress — see "OCR headword repair" below)
 
 ### Record schema
 

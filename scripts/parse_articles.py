@@ -71,6 +71,7 @@ EDITION_PROFILES = {
     "EB.5": {"margin_notes": True,  "multivol": True},     # 1797, 18 vols, same layout as EB.4
     "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
     "EB.10": {"margin_notes": True, "multivol": True},     # 1815, 5th ed, 20 vols (not part-split)
+    "EB.11": {"margin_notes": True, "multivol": True},     # 1823, 6th ed, 20 vols (not part-split)
 }
 
 
