@@ -178,8 +178,21 @@ redundancy is used to detect and correct OCR-garbled headwords. Three-stage pipe
 `VERTUMINUS→VERTUMNUS`). EB.9↔EB.10 base-headword overlap rose 22,524 → 22,768. Record counts
 unchanged (headword-only edit). Re-runnable end-to-end as the corpus grows.
 
-Not yet addressed: the "absorbed article" class (PERSIA welded under PERSEUS) — a headword missing
-with no singleton variant; needs body-splitting, a separate harder track (~200–400 cases).
+**Absorbed-article track** (a headword missing entirely because its body was welded onto the previous
+record — PERSIA under PERSEUS, INSTINCT under INSTEP). Three stages mirroring the headword repair:
+1. `scripts/absorbed_detect.py` — an oversized record (char_count > 3× the same headword's median
+   elsewhere, +8000) plus headwords present in ≥3 other editions but absent here, found either
+   adjacent to the absorber or by body text-match (same first 2 letters). 224 absorbers / 444 candidates.
+2. `scripts/split_workflow.js` — LLM fan-out (Sonnet): for each absorber + expected absorbed heads,
+   return the verbatim `start_text` where each absorbed article begins (or found=false — it correctly
+   rejects detector noise like AGON≈"agonies"). → `absorbed_splits.jsonl`.
+3. `scripts/apply_absorbed_splits.py` — locate each `start_text` (whitespace-tolerant), partition the
+   body, leave the first segment with the absorber, and emit the rest as new `detected_by=
+   "absorption-split"` records. Idempotent (skips records already carrying `provenance.absorbed_split`).
+
+First pass recovered **25 articles** (INSTINCT 72K from INSTEP, MACEDON 139K from MACE, PLATINA,
+AVICENNA, …). 16 of 63 split batches hit a session usage limit; ~63 absorbers (incl. PERSEUS→PERSIA)
+remain — resume `split_workflow.js` (cached agents skip), merge into `absorbed_splits.jsonl`, re-apply.
 
 ### Record schema
 ### Record schema
