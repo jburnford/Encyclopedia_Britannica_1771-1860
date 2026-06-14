@@ -74,6 +74,7 @@ EDITION_PROFILES = {
     "EB.10": {"margin_notes": True, "multivol": True},     # 1815, 5th ed, 20 vols (not part-split)
     "EB.11": {"margin_notes": True, "multivol": True},     # 1823, 6th ed, 20 vols (not part-split)
     "EB.12": {"margin_notes": True, "multivol": True},     # 1824, Suppl. to 4/5/6, 6 vols (alpha_range null)
+    "EB.15": {"margin_notes": True, "multivol": True},     # 1842, 7th ed, 21 vols + index (skipped); v1 dissertations
 }
 
 
@@ -548,13 +549,19 @@ def h2_title_matching(blocks, title_norm):
         for h in b.el.iter("h1", "h2", "h3"):
             if norm_caps(text_of(h)) == title_norm:
                 return clean_title(text_of(h))
+        # some treatise banners carry the title as the Section-Header's direct text
+        # rather than an <h*> child (EB.15 'N A V Y.'); match the block text too.
+        if norm_caps(text_of(b.el)) == title_norm:
+            return clean_title(text_of(b.el))
     return None
 
 
 def is_title_block(b, title_norm):
     if b.label != "Section-Header":
         return False
-    return any(norm_caps(text_of(h)) == title_norm for h in b.el.iter("h1", "h2", "h3"))
+    if any(norm_caps(text_of(h)) == title_norm for h in b.el.iter("h1", "h2", "h3")):
+        return True
+    return norm_caps(text_of(b.el)) == title_norm
 
 
 def allcaps_h2_title(blocks):
@@ -594,20 +601,25 @@ def detect_treatise_spans(pages, body_start):
         cnt = Counter()
         for p in pages[lo:hi + 1]:
             r = norm_caps(p["head"].running)
-            if len(r) >= 5 and not r.startswith(NONWORD_HEAD):
+            if len(r) >= 4 and not r.startswith(NONWORD_HEAD):
                 cnt[r] += 1
         start, display, title_norm = lo, None, None
         if cnt and cnt.most_common(1)[0][1] >= 2:
-            # path 1: dominant >=5-letter word running head (ANATOMY, ALGEBRA, ...)
-            title_norm = cnt.most_common(1)[0][0]
+            # path 1: dominant word running head (ANATOMY, ALGEBRA, ...). A >=5-letter
+            # word names a treatise on its own; a 4-letter head (NAVY, IRON) is only
+            # trusted when a matching title banner on the run's first page confirms it.
+            cand_norm = cnt.most_common(1)[0][0]
+            banner = None
             for cand in (lo - 1, lo):
                 if cand < 0:
                     continue
-                d = h2_title_matching(pages[cand]["blocks"], title_norm)
+                d = h2_title_matching(pages[cand]["blocks"], cand_norm)
                 if d:
-                    start, display = cand, d
+                    start, banner = cand, d
                     break
-            display = display or title_norm
+            if len(cand_norm) >= 5 or banner is not None:
+                title_norm = cand_norm
+                display = banner or cand_norm
         elif hi - lo + 1 >= 4:
             # path 2: running head too short to be a word (LAW -> 'L'); use the
             # all-caps banner h2 on the run's first page as the title.
@@ -788,6 +800,80 @@ def derive_alpha0(pages):
     return real[0][0] if real else "A"
 
 
+DISS_ORDINALS = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH",
+                 "SIXTH", "SEVENTH", "EIGHTH"]
+# "DISSERTATION SECOND" / "SECOND DISSERTATION", tolerant of OCR garbles
+# (DISSENTATION, DISSERTATIONE, DISSETATION). Captures the ordinal word.
+DISS_ORD_RE = re.compile(
+    r"DISSE[RN]?TATIONE?S?(" + "|".join(DISS_ORDINALS) + r")"
+    r"|(" + "|".join(DISS_ORDINALS) + r")DISSE[RN]?TATION")
+DISS_VOL_RE = re.compile(r"dissertation", re.I)
+
+
+def _diss_ordinal(running_norm):
+    m = DISS_ORD_RE.search(running_norm or "")
+    if not m:
+        return None
+    g = m.group(0)
+    return next((o for o in DISS_ORDINALS if o in g), None)
+
+
+def is_dissertation_volume(meta):
+    """EB.15 v1 / EB.16 v1 are 'Preliminary dissertations' volumes: several long
+    signed dissertations, not a dictionary section."""
+    return bool(DISS_VOL_RE.search((meta.get("alpha_range") or "")
+                                   + " " + (meta.get("volume_label") or "")))
+
+
+def segment_dissertation_volume(pages, meta):
+    """Split a Preliminary-Dissertations volume into one treatise record per signed
+    dissertation. The verso running head is the volume title ('PRELIMINARY
+    DISSERTATIONS') while the recto names the dissertation ('DISSERTATION FIRST');
+    we walk pages, carry the last ordinal forward, and open a new segment only on a
+    strictly higher ordinal (monotonic — so a stray mis-OCR'd ordinal cannot split a
+    dissertation). Front matter / index before the first ordinal is skipped."""
+    rank = {o: i for i, o in enumerate(DISS_ORDINALS)}
+    bounds, curmax = [], -1
+    for pg in pages:
+        o = _diss_ordinal(norm_caps(pg["head"].running) if pg["head"].running else "")
+        if o is not None and rank[o] > curmax:
+            curmax = rank[o]
+            bounds.append((o, pg["idx"]))
+    if not bounds:
+        return []
+    # The dissertation-section opening (half-title, 'PRELIMINARY DISSERTATIONS',
+    # preface) precedes the first ordinal running head: pull the first segment back
+    # to just after the front matter (last INDEX / TABLE / Roman-numeral page).
+    first_ord_idx = bounds[0][1]
+    fm_last = -1
+    for pg in pages:
+        if pg["idx"] >= first_ord_idx:
+            break
+        r = norm_caps(pg["head"].running) if pg["head"].running else ""
+        if (re.match(r"^(INDEX|TABLE|CONTENTS|OMISSION|ERRAT|BRITANNIA|EB)", r)
+                or re.fullmatch(r"[IVXLCDM]+", r)):
+            fm_last = pg["idx"]
+    if 0 <= fm_last < first_ord_idx - 1:
+        bounds[0] = (bounds[0][0], fm_last + 1)
+    last = max((pg["idx"] for pg in pages
+                if any(b.label in BODY_BLOCK_LABELS for b in pg["blocks"])),
+               default=pages[-1]["idx"])
+    records = []
+    for k, (o, start) in enumerate(bounds):
+        end = bounds[k + 1][1] - 1 if k + 1 < len(bounds) else last
+        span = {"title": "DISSERTATION " + o, "title_norm": "DISSERTATION" + o,
+                "end_idx": end}
+        tre = TreatiseAcc(span, pages[start], end)
+        for j in range(start, end + 1):
+            for b in order_blocks(pages[j]["blocks"]):
+                if b.label in ("Page-Header", "Page-Footer"):
+                    continue
+                tre.add_block(b, pages[j])
+        outline = build_outline(pages[start:end + 1])
+        records.append(finalize_treatise(tre, outline, meta))
+    return records
+
+
 def process_volume(vol_dir: Path):
     meta = json.loads((vol_dir / "metadata.json").read_text())
     prof = profile_for(meta)
@@ -804,6 +890,16 @@ def process_volume(vol_dir: Path):
                 blocks = drop_margin_notes(blocks)
             pages.append({"idx": idx, "image": rec.get("image", ""),
                           "blocks": blocks, "head": head})
+
+    # Preliminary-Dissertations volumes (EB.15 v1, EB.16 v1) are signed essays, not a
+    # dictionary section: split them per dissertation instead of running the headword
+    # segmentation (which would lump all into one giant treatise).
+    if is_dissertation_volume(meta):
+        records = segment_dissertation_volume(pages, meta)
+        stats = {"articles": 0, "sub_entries": 0, "treatises": len(records),
+                 "bold": 0, "allcaps": 0, "allcaps_mod": 0, "inverted": 0,
+                 "runon": 0, "pages_body": 0, "pages_plate": 0}
+        return records, stats, meta
 
     # EB.9 (4th ed) splits each volume into "Part 1, AME-ANS" / "Part 2, ...": strip
     # the "Part N, " scan-split prefix so the alpha range drives body-start / opener.
@@ -1047,6 +1143,15 @@ def main():
 
     grand = {}
     for meta_p in metas:
+        # Skip standalone alphabetical index volumes (EB.15 / EB.16 each ship a
+        # "General index" with volume_num null). Their A-Z entries have dictionary
+        # running heads and would parse as garbage articles.
+        peek = json.loads(meta_p.read_text())
+        if peek.get("volume_num") is None and "index" in (
+                (peek.get("volume_label") or "") + " " + (peek.get("title") or "")).lower():
+            print(f"{peek.get('eb_code')} skip index volume {peek.get('identifier')} "
+                  f"({peek.get('volume_label')})")
+            continue
         records, stats, meta = process_volume(meta_p.parent)
         # same name as the volume's HTML, with a .jsonl extension
         out_p = art_dir / (make_name(meta)[:-len(".html")] + ".jsonl")
