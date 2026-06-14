@@ -26,7 +26,7 @@ Chandra 2 on Nibi H100s, headers/footers kept. See `README.md` for the pipeline.
 - **163 HTML files** committed and pushed to GitHub
   (`github.com/jburnford/Encyclopedia_Britannica_1771-1860`, public).
 
-## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 + EB.9 complete)
+## Stage 3 — Article parsing (EB.1 + EB.4 + EB.5 + EB.9 + EB.10 complete)
 
 `scripts/parse_articles.py` segments the page-stream into one record per dictionary headword,
 with long treatises as single records. Run: `python3 scripts/parse_articles.py --only EB.9 --report`.
@@ -44,7 +44,15 @@ toggles only the parts that differ (unknown editions fall back to 1st-edition be
 | `margin_notes` | off | on | on | on | drop outer-margin side-glosses / footnotes (2nd ed. on) from bodies |
 | `multivol` | off | on | on | on | a volume may open mid-treatise (`Astronomy-BZO`, `Hydrostatics-LES`, `Agriculture-AME`); capture it |
 
-Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4/EB.5/EB.9) — edition-agnostic.
+(EB.10, the 5th ed., reuses the same `margin_notes` + `multivol` profile; it is not part-split.)
+
+Page-number parsing accepts both `( 5 )` (EB.1) and `[ 101 ]` (EB.4+) — edition-agnostic.
+**Headword delimiter:** an all-caps headword is recognised when followed by a comma/period
+(`ANATHEMA, in …`) **or a parenthetical etymology/identifier** (`BAROMETER (from Baros …)`,
+`POPE (Alexander), …`). The paren form was added after the EB.9↔EB.10 cross-check showed
+`BAROMETER` (and ~3,750 biography / ancient-geography / redirect entries across EB.4/5/9/10) being
+silently absorbed into the previous article. `is_cross_reference` also strips a leading `(name)` so
+`LOYOLA (Ignatius). See IGNATIUS.` is flagged as a redirect.
 The `alpha_range` is stripped of EB.9's `"Part N, "` scan-split prefix before it drives body-start
 and the lead-treatise opener (else `find_body_start` keys on letter "P" and skips the volume front).
 **Treatise-section gate:** bare math labels (`RULE`, `EXAMP.`, `PROB. I`, `COR.`, `QUEST.`) inside
@@ -123,6 +131,23 @@ the articles. The 4th-edition dissertation set is captured in full: `CHEMISTRY` 
 mis-titled where a plate list inherited a running head (`BRIDGE`, `CLOCK`, `TELESCOPE`); no content lost.
 The massive `AMERICA` article (~100 pp, filed under "AME") stays one *article* rather than a treatise
 because its running head never breaks alphabetical filing — captured whole, the label is cosmetic.
+
+### EB.10 (1815 fifth edition) — all 20 volumes
+
+**30,823 records** (26,980 articles · 3,553 sub-entries · 110 treatises before the paren fix; the fix
+lifted it), mean **97.8 %** image coverage, 0 truncation. Same layout family as EB.4/5/9 but **not
+part-split** — reused the profile unchanged. Used as a **cross-edition validator** against EB.9 (the
+5th ed. is largely a re-set of the 4th): **93 % of base headwords are shared** between EB.9 and EB.10,
+and the non-shared 7 % is dominated by OCR spelling variants of the *same* article, not parser
+disagreement. Content spot-checks are byte-identical or near (`CALCINATION` 368 ch both, `ABDOMEN`
+131 both, `ECLIPSE` 182 both, `GRAVITY` 1581/1604).
+
+The cross-check surfaced the paren-headword bug (above). Every large article that first looked
+"missing in EB.9" turned out to be **present but OCR-mangled in the headword**, correctly segmented:
+`CONSTANTINOPLE`→`CONSTANTINOPE` (152K ch), `OTAHEITE`→`OTAHITE` (96K), `PERSIA` welded under
+`PERSEUS` (142K), `INSTINCT` under `INSTEP` (67K). These are OCR-quality issues (a dropped letter or a
+heading the VLM didn't set off), not segmentation errors — flagged as a known limitation, fixable only
+by re-OCR or a fuzzy headword-normalisation pass before grounding.
 
 ### Record schema
 
@@ -210,8 +235,8 @@ recovered across both editions, 0 false-positives on full audit; e.g. `GAGE` now
 
 ## Next steps
 
-1. **Continue to the remaining editions** (EB.7 Suppl., EB.10 5th, EB.11 6th, EB.12 Suppl.,
-   EB.15 7th, EB.16 8th). EB.1 + EB.4 + EB.5 + EB.9 done; the `EDITION_PROFILES` mechanism is in
+1. **Continue to the remaining editions** (EB.7 Suppl., EB.11 6th, EB.12 Suppl., EB.15 7th,
+   EB.16 8th). EB.1 + EB.4 + EB.5 + EB.9 + EB.10 done; the `EDITION_PROFILES` mechanism is in
    place, so each new edition should need only a profile entry plus spot-checking (layout,
    running-head conventions, treatise sets, and — for part-split scans — the `"Part N, "` prefix).
 2. **Ground headwords to Wikidata** (use the WikidataMCP vector search; the `headword-disambig` skill).

@@ -70,6 +70,7 @@ EDITION_PROFILES = {
     "EB.4": {"margin_notes": True,  "multivol": True},     # 1778-83, 10 vols, marginal glosses
     "EB.5": {"margin_notes": True,  "multivol": True},     # 1797, 18 vols, same layout as EB.4
     "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
+    "EB.10": {"margin_notes": True, "multivol": True},     # 1815, 5th ed, 20 vols (not part-split)
 }
 
 
@@ -100,7 +101,12 @@ CAPS_WORD = re.compile(rf"[{_UC}][{_UC}&]+(?:-[{_UC}]+)*")   # all-caps run, >=2
 LEADING_CAPS = re.compile(rf"^[{_UC}]+")
 DROPCAP = re.compile(rf"^[{_UC}]$")
 ALLCAPS_HEAD = re.compile(
-    rf"^\s*([{_UC}][{_UC}&]{{2,}}(?:[ -][{_UC}][A-Za-zÀ-ÿ&]*)*)\s*[,.]\s+\S")
+    rf"^\s*([{_UC}][{_UC}&]{{2,}}(?:[ -][{_UC}][A-Za-zÀ-ÿ&]*)*)"
+    rf"\s*(?:[,.]\s+\S|\(\s*[A-Za-zÀ-ÿ])")
+# the delimiter after an all-caps headword is normally a comma/period ("ANATHEMA, in
+# …"), but a Greek-derived term opens with a parenthetical etymology instead
+# ("BAROMETER (from Baros weight …)", "THERMOMETER (from …)") — accept that too, else
+# the whole article is absorbed into the previous entry (BAROMETER lost in EB.9 vol 3).
 # structural markers (PLATE IV, FIG. 3, CHAP. II, PART I, CASE 1, PROP. V) — only
 # a marker when FOLLOWED BY a number/roman. Bare "CASE, among grammarians" or
 # "BOOK, in commerce" etc. are real dictionary headwords and must NOT be rejected.
@@ -283,6 +289,7 @@ def is_cross_reference(headword: str, body_text: str) -> bool:
     if hw and pre[:len(hw)].upper() == hw.upper():     # strip the leading headword
         pre = pre[len(hw):]
     pre = pre.strip(" ,.;:")
+    pre = re.sub(r"^\([^)]*\)", "", pre).strip(" ,.;:")  # strip a name/qualifier paren
     pre = _DOMAIN.sub("", pre, count=1).strip(" ,.;:")  # strip one domain clause
     return pre == ""
 
