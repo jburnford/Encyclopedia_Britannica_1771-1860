@@ -75,6 +75,7 @@ EDITION_PROFILES = {
     "EB.11": {"margin_notes": True, "multivol": True},     # 1823, 6th ed, 20 vols (not part-split)
     "EB.12": {"margin_notes": True, "multivol": True},     # 1824, Suppl. to 4/5/6, 6 vols (alpha_range null)
     "EB.15": {"margin_notes": True, "multivol": True},     # 1842, 7th ed, 21 vols + index (skipped); v1 dissertations
+    "EB.16": {"margin_notes": True, "multivol": True},     # 1853-60, 8th ed, 21 vols + index (skipped); v1 dissertations
 }
 
 
