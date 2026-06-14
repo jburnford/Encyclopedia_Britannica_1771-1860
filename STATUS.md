@@ -190,9 +190,13 @@ record — PERSIA under PERSEUS, INSTINCT under INSTEP). Three stages mirroring 
    body, leave the first segment with the absorber, and emit the rest as new `detected_by=
    "absorption-split"` records. Idempotent (skips records already carrying `provenance.absorbed_split`).
 
-First pass recovered **25 articles** (INSTINCT 72K from INSTEP, MACEDON 139K from MACE, PLATINA,
-AVICENNA, …). 16 of 63 split batches hit a session usage limit; ~63 absorbers (incl. PERSEUS→PERSIA)
-remain — resume `split_workflow.js` (cached agents skip), merge into `absorbed_splits.jsonl`, re-apply.
+Recovered **69 articles** (60 new records + 9 relabels) across all five editions: INSTINCT 72K from
+INSTEP, MACEDON 139K from MACE, PERSIA 142K from PERSEUS, MOTION 96K, SHAKESPEARE, SLAVERY, BARBARY,
+PARAGUAY, NECROLOGY/NECROMANCY, FONTICULUS/FONTINALIS/FOOD, … When the absorber's own article is
+negligible (<150 chars — a marginal-note scrap before the whole absorbed article, e.g. PERSEUS), the
+record is relabelled to the recovered headword (`provenance.relabeled_from`) rather than left as a stub.
+The Sonnet splitter is conservative (80 of 444 candidates confirmed), correctly rejecting detector
+noise. (The 16 batches that first hit a session limit were finished by resuming the same run.)
 
 ### Record schema
 ### Record schema

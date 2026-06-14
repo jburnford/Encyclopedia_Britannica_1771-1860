@@ -104,7 +104,7 @@ def main():
                 if not sp.get("found"):
                     continue
                 off = find_offset(body, sp.get("start_text", ""))
-                if off is None or off < 100:        # 0/early = absorber's own text
+                if off is None or off < 10:         # offset 0 = no real boundary
                     n_unlocated += 1
                     continue
                 pts.append((off, sp["norm"]))
@@ -112,31 +112,48 @@ def main():
                 out.append(r)
                 continue
             pts.sort()
-            # dedupe near-identical offsets
-            dedup = []
+            dedup = []                              # dedupe near-identical offsets
             for off, nm in pts:
                 if dedup and off - dedup[-1][0] < 40:
                     continue
                 dedup.append((off, nm))
             pts = dedup
             n_absorbers += 1
-            # trim absorber to first segment
-            orig_cc = r["char_count"]
-            first = body[:pts[0][0]].rstrip()
-            r["body_text"] = first
-            r["body_html"] = seg_html(first)
-            r["char_count"] = len(first)
-            r.setdefault("provenance", {})["absorbed_split"] = {
-                "recovered": [nm for _, nm in pts], "original_char_count": orig_cc,
-                "source": "cross-edition-absorption+llm"}
-            out.append(r)
-            # build recovered records
+            orig_cc, orig_hw = r["char_count"], r["headword"]
+
+            # pieces: the absorber's own article first, then each absorbed article
+            pieces = [(0, pts[0][0], orig_hw, r["base_headword"])]
             for j, (off, nm) in enumerate(pts):
                 end = pts[j + 1][0] if j + 1 < len(pts) else len(body)
-                seg = body[off:end].strip()
-                hw = disp.get(nm, nm)
-                new = {
-                    "headword": hw, "base_headword": hw, "qualifier": None,
+                pieces.append((off, end, disp.get(nm, nm), disp.get(nm, nm)))
+            # if the absorber's own segment is negligible (a marginal-note scrap, e.g.
+            # PERSEUS = "1 Extent of Persia." before the whole PERSIA article), drop it
+            # and let the absorber record BECOME the first recovered article.
+            relabel = (pieces[0][1] - pieces[0][0]) < 150
+            if relabel:
+                pieces = pieces[1:]
+
+            s0, e0, hw0, base0 = pieces[0]
+            seg0 = body[s0:e0].strip()
+            r["body_text"] = seg0
+            r["body_html"] = seg_html(seg0)
+            r["char_count"] = len(seg0)
+            if relabel:
+                r["headword"], r["base_headword"] = hw0, base0
+                r["detected_by"] = "absorption-split"
+                r["is_cross_reference"] = is_cross_reference(hw0, seg0)
+                r["cross_refs"] = extract_cross_refs(seg0)[:50]
+            prov = r.setdefault("provenance", {})
+            prov["absorbed_split"] = {
+                "recovered": [p[2] for p in pieces[1:]], "original_char_count": orig_cc,
+                "source": "cross-edition-absorption+llm"}
+            if relabel:
+                prov["relabeled_from"] = orig_hw
+            out.append(r)
+            for s, e, hw, base in pieces[1:]:
+                seg = body[s:e].strip()
+                out.append({
+                    "headword": hw, "base_headword": base, "qualifier": None,
                     "type": "article", "detected_by": "absorption-split",
                     "is_cross_reference": is_cross_reference(hw, seg),
                     "volume_num": r["volume_num"], "eb_code": r["eb_code"],
@@ -145,9 +162,8 @@ def main():
                     "image_page_start": r["image_page_start"], "image_page_end": r["image_page_end"],
                     "body_text": seg, "body_html": seg_html(seg),
                     "cross_refs": extract_cross_refs(seg)[:50], "char_count": len(seg),
-                    "provenance": {"split_from": r["headword"], "source": "cross-edition-absorption+llm"},
-                }
-                out.append(new)
+                    "provenance": {"split_from": orig_hw, "source": "cross-edition-absorption+llm"},
+                })
                 n_new += 1
         if not args.dry_run:
             with path.open("w", encoding="utf-8") as fh:
