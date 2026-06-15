@@ -33,29 +33,51 @@ def compact_headword(i, c):
     }
 
 
+def compact_absorbed(i, c):
+    # absorbed-split items are keyed by (file, ln); the split workflow echoes those
+    # back. Carry the full body so the agent can locate each absorbed start_text.
+    return {
+        "file": c["file"],
+        "ln": c["ln"],
+        "absorber_headword": c["absorber_headword"],
+        "body": c["body"],
+        "absorbed": [{"norm": a["norm"], "headword": a["headword"], "ref": a["ref"]}
+                     for a in c["absorbed"]],
+    }
+
+
+COMPACT = {"headword": compact_headword, "absorbed": compact_absorbed}
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--candidates", default="headword_candidates.jsonl")
-    ap.add_argument("--out-dir", default="repair_batches/headword")
-    ap.add_argument("--per-batch", type=int, default=40)
+    ap.add_argument("--mode", choices=["headword", "absorbed"], default="headword")
+    ap.add_argument("--candidates", default=None)
+    ap.add_argument("--out-dir", default=None)
+    ap.add_argument("--per-batch", type=int, default=0)
     args = ap.parse_args()
 
-    rows = [json.loads(l) for l in open(args.candidates)]
-    out = Path(args.out_dir)
+    # mode-aware defaults: absorbed items carry big bodies, so far fewer per batch
+    cand = args.candidates or (
+        "headword_candidates.jsonl" if args.mode == "headword"
+        else "absorbed_candidates.jsonl")
+    out = Path(args.out_dir or f"repair_batches/{args.mode}")
+    per = args.per_batch or (40 if args.mode == "headword" else 8)
+    compact = COMPACT[args.mode]
+
+    rows = [json.loads(l) for l in open(cand)]
     out.mkdir(parents=True, exist_ok=True)
-    # clear any stale batch files so a re-split can't leave orphans
-    for old in out.glob("batch_*.json"):
+    for old in out.glob("batch_*.json"):       # clear stale batches (no orphans)
         old.unlink()
 
     n = 0
-    for b, start in enumerate(range(0, len(rows), args.per_batch)):
-        chunk = [compact_headword(start + j, rows[start + j])
-                 for j in range(min(args.per_batch, len(rows) - start))]
+    for b, start in enumerate(range(0, len(rows), per)):
+        chunk = [compact(start + j, rows[start + j])
+                 for j in range(min(per, len(rows) - start))]
         (out / f"batch_{b:04d}.json").write_text(
             json.dumps(chunk, ensure_ascii=False, indent=0))
         n += 1
-    print(f"{len(rows)} candidates -> {n} batch files of <= {args.per_batch} "
-          f"in {out}/")
+    print(f"{len(rows)} {args.mode} candidates -> {n} batch files of <= {per} in {out}/")
 
 
 if __name__ == "__main__":
