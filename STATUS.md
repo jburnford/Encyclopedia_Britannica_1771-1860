@@ -182,7 +182,8 @@ unchanged (headword-only edit). Re-runnable end-to-end as the corpus grows.
 record — PERSIA under PERSEUS, INSTINCT under INSTEP). Three stages mirroring the headword repair:
 1. `scripts/absorbed_detect.py` — an oversized record (char_count > 3× the same headword's median
    elsewhere, +8000) plus headwords present in ≥3 other editions but absent here, found either
-   adjacent to the absorber or by body text-match (same first 2 letters). 224 absorbers / 444 candidates.
+   adjacent to the absorber or by body text-match (same first 2 letters). 679 absorber records
+   (each with its expected absorbed heads) across all 10 editions.
 2. `scripts/split_workflow.js` — LLM fan-out (Sonnet): for each absorber + expected absorbed heads,
    return the verbatim `start_text` where each absorbed article begins (or found=false — it correctly
    rejects detector noise like AGON≈"agonies"). → `absorbed_splits.jsonl`.
@@ -190,13 +191,19 @@ record — PERSIA under PERSEUS, INSTINCT under INSTEP). Three stages mirroring 
    body, leave the first segment with the absorber, and emit the rest as new `detected_by=
    "absorption-split"` records. Idempotent (skips records already carrying `provenance.absorbed_split`).
 
-Recovered **69 articles** (60 new records + 9 relabels) across all five editions: INSTINCT 72K from
-INSTEP, MACEDON 139K from MACE, PERSIA 142K from PERSEUS, MOTION 96K, SHAKESPEARE, SLAVERY, BARBARY,
-PARAGUAY, NECROLOGY/NECROMANCY, FONTICULUS/FONTINALIS/FOOD, … When the absorber's own article is
-negligible (<150 chars — a marginal-note scrap before the whole absorbed article, e.g. PERSEUS), the
-record is relabelled to the recovered headword (`provenance.relabeled_from`) rather than left as a stub.
-The Sonnet splitter is conservative (80 of 444 candidates confirmed), correctly rejecting detector
-noise. (The 16 batches that first hit a session limit were finished by resuming the same run.)
+**Full 10-edition pass complete** (679 absorber records, 85 batches): the Sonnet splitter confirmed
+92 absorbers carrying 118 found splits, correctly rejecting detector noise (most candidates resolve to
+found=false — a word appearing only in passing prose). `apply_absorbed_splits.py` then **split 89
+absorbers and recovered 104 records** (new records + relabels; 2 start_texts unlocated) across all ten
+editions: INSTINCT 72K from INSTEP, MACEDON 139K from MACE, PERSIA 142K from PERSEUS, MOTION 96K,
+SHAKESPEARE, SLAVERY, BARBARY, PARAGUAY, NECROLOGY/NECROMANCY, FONTICULUS/FONTINALIS/FOOD, WEXFORD from
+WESTMORELAND, CORNWALL, SOUTHAMPTON, PEMBROKESHIRE, … When the absorber's own article is negligible
+(<150 chars — a marginal-note scrap before the whole absorbed article, e.g. PERSEUS), the record is
+relabelled to the recovered headword (`provenance.relabeled_from`) rather than left as a stub.
+
+The split pass was run as a resumable driver (`scripts/repair_driver.py`, i-keyed decisions in
+`absorbed_splits.jsonl`) in 9 increments of ~10 batches, so an interrupted/usage-limited run simply
+re-lists its unfinished batches next time.
 
 ### Record schema
 ### Record schema
