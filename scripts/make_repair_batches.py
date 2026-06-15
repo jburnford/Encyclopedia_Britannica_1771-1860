@@ -34,9 +34,13 @@ def compact_headword(i, c):
 
 
 def compact_absorbed(i, c):
-    # absorbed-split items are keyed by (file, ln); the split workflow echoes those
-    # back. Carry the full body so the agent can locate each absorbed start_text.
+    # absorbed-split items carry a global index i (== line in absorbed_candidates.jsonl);
+    # the split workflow echoes i back and the driver maps it to the authoritative
+    # (file, ln). Echoing a single int is far less error-prone than a filename string
+    # (agents mis-copy the file field between adjacent items). file/ln are included for
+    # the agent's reference only. Carry the full body so it can locate each start_text.
     return {
+        "i": i,
         "file": c["file"],
         "ln": c["ln"],
         "absorber_headword": c["absorber_headword"],

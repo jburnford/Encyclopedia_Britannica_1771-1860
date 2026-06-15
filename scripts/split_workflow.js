@@ -16,10 +16,9 @@ const SCHEMA = {
     results: {
       type: 'array',
       items: {
-        type: 'object', additionalProperties: false, required: ['file', 'ln', 'splits'],
+        type: 'object', additionalProperties: false, required: ['i', 'splits'],
         properties: {
-          file: { type: 'string' },
-          ln: { type: 'integer' },
+          i: { type: 'integer' },
           splits: {
             type: 'array',
             items: {
@@ -61,7 +60,8 @@ Rules:
   - The absorber's OWN article comes first; do not mark its text as an absorbed start.
   - Absorbed articles appear in alphabetical order after the absorber.
   - The headword in the body may be OCR-garbled or lower-cased; match by content against 'ref'.
-  - Return a result object for EVERY item, with a split entry for EVERY absorbed headword.
+  - Return a result object for EVERY item: copy the item's integer "i" field verbatim,
+    plus a split entry for EVERY absorbed headword. Do NOT return file/ln — only "i".
 
 Read the batch JSON file at this path and process every item:
 `

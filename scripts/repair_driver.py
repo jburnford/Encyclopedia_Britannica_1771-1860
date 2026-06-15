@@ -40,9 +40,14 @@ def decided_set(decisions_path, fields):
 
 
 MODES = {
-    # mode -> (key fields, decisions-result key in the Workflow output, fields to persist)
-    "headword": (["i"], "decisions", ["i", "decision", "canonical"]),
-    "absorbed": (["file", "ln"], "results", ["file", "ln", "splits"]),
+    # mode -> (key fields, Workflow result key, fields to persist, candidates file)
+    # Both passes key on a single global int i (agents mis-copy filename strings between
+    # adjacent items, so file/ln are never trusted from the agent). The absorbed merge
+    # resolves i -> the authoritative (file, ln) from the candidates and persists those
+    # (plus i) so apply_absorbed_splits can still join by (file, ln).
+    "headword": (["i"], "decisions", ["i", "decision", "canonical"], None),
+    "absorbed": (["i"], "results", ["file", "ln", "i", "splits"],
+                 "absorbed_candidates.jsonl"),
 }
 
 
@@ -52,11 +57,12 @@ def main():
     ap.add_argument("--mode", choices=list(MODES), default="headword")
     ap.add_argument("--batch-dir", default=None)
     ap.add_argument("--decisions", default=None)
+    ap.add_argument("--candidates", default=None)
     ap.add_argument("--count", type=int, default=6)
     ap.add_argument("--inbox", default="repair_batches/_inbox.json")
     args = ap.parse_args()
 
-    fields, result_key, persist = MODES[args.mode]
+    fields, result_key, persist, cand_default = MODES[args.mode]
     batch_dir = args.batch_dir or f"repair_batches/{args.mode}"
     decisions = args.decisions or (
         "headword_decisions.jsonl" if args.mode == "headword"
@@ -66,21 +72,37 @@ def main():
     decided = decided_set(decisions, fields)
 
     if args.cmd == "merge":
+        # absorbed: build i -> (file, ln) from the candidates so the agent's
+        # (untrusted) file/ln are replaced by the canonical ones.
+        loc = {}
+        if args.mode == "absorbed":
+            cpath = args.candidates or cand_default
+            for ix, line in enumerate(open(cpath)):
+                c = json.loads(line)
+                loc[ix] = (c["file"], c["ln"])
         raw = json.loads(Path(args.inbox).read_text())
         rows = raw[result_key] if isinstance(raw, dict) else raw
-        added = skipped = 0
+        added = skipped = bad = 0
         with open(decisions, "a") as fh:
             for d in rows:
                 k = keyof(d, fields)
                 if k in decided:
                     skipped += 1
                     continue
-                fh.write(json.dumps({f: d.get(f) for f in persist},
+                rec = dict(d)
+                if args.mode == "absorbed":
+                    if d["i"] not in loc:
+                        bad += 1
+                        continue
+                    rec["file"], rec["ln"] = loc[d["i"]]
+                fh.write(json.dumps({f: rec.get(f) for f in persist},
                                     ensure_ascii=False) + "\n")
                 decided.add(k)
                 added += 1
-        print(f"merged: +{added} new, {skipped} already-present "
-              f"-> {len(decided)} total decided")
+        msg = f"merged: +{added} new, {skipped} already-present"
+        if bad:
+            msg += f", {bad} unmappable-i dropped"
+        print(msg + f" -> {len(decided)} total decided")
         return
 
     undone = [b for b in batches if not batch_indices(b, fields) <= decided]
