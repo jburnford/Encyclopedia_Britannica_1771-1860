@@ -73,9 +73,13 @@ EDITION_PROFILES = {
     "EB.9": {"margin_notes": True,  "multivol": True},     # 1810, 4th ed, 20 vols in 40 parts
     "EB.10": {"margin_notes": True, "multivol": True},     # 1815, 5th ed, 20 vols (not part-split)
     "EB.11": {"margin_notes": True, "multivol": True},     # 1823, 6th ed, 20 vols (not part-split)
-    "EB.12": {"margin_notes": True, "multivol": True},     # 1824, Suppl. to 4/5/6, 6 vols (alpha_range null)
-    "EB.15": {"margin_notes": True, "multivol": True},     # 1842, 7th ed, 21 vols + index (skipped); v1 dissertations
-    "EB.16": {"margin_notes": True, "multivol": True},     # 1853-60, 8th ed, 21 vols + index (skipped); v1 dissertations
+    # running_head:"word" — EB.12/15/16 print the full current headword as the page
+    # running head ("ACOUSTICS.", "VOL. XIV") instead of a 3-letter trigram, so a
+    # full-word head must be accepted as the dictionary-page signal (else continuation
+    # pages look like treatise gaps and truncate the article into junk treatises).
+    "EB.12": {"margin_notes": True, "multivol": True, "running_head": "word"},     # 1824, Suppl. to 4/5/6, 6 vols (alpha_range null)
+    "EB.15": {"margin_notes": True, "multivol": True, "running_head": "word"},     # 1842, 7th ed, 21 vols + index (skipped); v1 dissertations
+    "EB.16": {"margin_notes": True, "multivol": True, "running_head": "word"},     # 1853-60, 8th ed, 21 vols + index (skipped); v1 dissertations
 }
 
 
@@ -359,7 +363,10 @@ class PageHead:
         self.trigram = trigram      # 3-letter trigram when mode == dict
 
 
-def parse_page_header(blocks):
+VOL_HEAD = re.compile(r"VOL[IVXLC]+$")   # "VOL. XIV" end-of-volume plate/flyleaf head
+
+
+def parse_page_header(blocks, running_head="trigram"):
     page_no, alphas = None, []
     n_text = sum(1 for b in blocks if b.label == "Text")
     n_img = sum(1 for b in blocks if b.label in ("Image", "Figure", "Diagram"))
@@ -375,8 +382,20 @@ def parse_page_header(blocks):
             alphas.append(unspace_caps(t))
     trigram = next((a for a in alphas if re.fullmatch(r"[A-Z]{3}", a)), None)
     plate_like = any(re.match(r"PLATE", a, re.I) for a in alphas)
-    word = next((a for a in alphas if len(norm_caps(a)) >= 4), None)
-    if trigram:
+    # "VOL.<roman>" is an end-of-volume plate/flyleaf running head, never a real
+    # dictionary or treatise head — guard it before the word fallback so it cannot
+    # spawn a bogus "VOL<roman>" record.
+    vol_like = any(VOL_HEAD.fullmatch(norm_caps(a)) for a in alphas)
+    word = next((a for a in alphas
+                 if len(norm_caps(a)) >= 4 and not VOL_HEAD.fullmatch(norm_caps(a))), None)
+    # Word-running-head editions (EB.12/15/16): a full-word head IS the dictionary
+    # signal. Synthesize a trigram from it so continuation pages stay in dict mode
+    # instead of being mistaken for treatise gaps (which truncated the article).
+    if not trigram and running_head == "word" and word and not vol_like:
+        trigram = norm_caps(word)[:3]
+    if vol_like:
+        mode = "plate"
+    elif trigram:
         mode = "dict"
     elif plate_like or (n_img and n_text <= 1):
         mode = "plate"
@@ -886,7 +905,7 @@ def process_volume(vol_dir: Path):
                 continue
             rec = json.loads(line)
             blocks = parse_blocks(rec.get("raw", "") or "")
-            head = parse_page_header(blocks)            # header parsed before filtering
+            head = parse_page_header(blocks, prof.get("running_head", "trigram"))  # header parsed before filtering
             if prof["margin_notes"]:
                 blocks = drop_margin_notes(blocks)
             pages.append({"idx": idx, "image": rec.get("image", ""),
