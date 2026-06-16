@@ -1,0 +1,147 @@
+{"file": "EB.10_ed5_v02_AME-ASS_191689063.jsonl", "absorber": "ANIMAL", "recovered": ["ANIMALCULE"], "relabeled_from": null}
+{"file": "EB.10_ed5_v02_AME-ASS_191689063.jsonl", "absorber": "ARBELA", "recovered": [], "relabeled_from": "ARBALEST"}
+{"file": "EB.10_ed5_v03_ASS-BOO_193108318.jsonl", "absorber": "AYLMER", "recovered": ["AYR"], "relabeled_from": null}
+{"file": "EB.10_ed5_v03_ASS-BOO_193108318.jsonl", "absorber": "BARBARUS", "recovered": ["BARBARY"], "relabeled_from": null}
+{"file": "EB.10_ed5_v03_ASS-BOO_193108318.jsonl", "absorber": "BENFIELD", "recovered": ["BENGAL"], "relabeled_from": null}
+{"file": "EB.10_ed5_v11_HYD-LIE_192547785.jsonl", "absorber": "IMPOTENCE", "recovered": ["IMPOTENCY"], "relabeled_from": null}
+{"file": "EB.10_ed5_v12_LIE-Materia-medica_192200901.jsonl", "absorber": "LOLLARDS", "recovered": ["LOMBARD", "LOMBARDS"], "relabeled_from": null}
+{"file": "EB.10_ed5_v12_LIE-Materia-medica_192200901.jsonl", "absorber": "LONG", "recovered": ["LONGEVITY"], "relabeled_from": null}
+{"file": "EB.10_ed5_v12_LIE-Materia-medica_192200901.jsonl", "absorber": "MACE", "recovered": ["MACEDON"], "relabeled_from": null}
+{"file": "EB.10_ed5_v13_MAT-MIC_192200898.jsonl", "absorber": "MELOS", "recovered": ["MELPOMENE", "MELROSE", "MELT", "MELTING", "MELVIL", "MEMBER", "MEMBRANE", "MEMEL", "MEMNON"], "relabeled_from": null}
+{"file": "EB.10_ed5_v14_MIC-NIC_192200900.jsonl", "absorber": "MILLO", "recovered": ["MILO"], "relabeled_from": null}
+{"file": "EB.10_ed5_v17_Poetry-RHI_191689062.jsonl", "absorber": "POLISHING", "recovered": ["POLITENESS"], "relabeled_from": null}
+{"file": "EB.10_ed5_v17_Poetry-RHI_191689062.jsonl", "absorber": "REPROBATION", "recovered": ["REPRODUCTION"], "relabeled_from": null}
+{"file": "EB.10_ed5_v18_RHI-SCR_192984256.jsonl", "absorber": "RUSSIA", "recovered": [], "relabeled_from": "RUSSELLIA"}
+{"file": "EB.10_ed5_v20_SUI-ZYM_191678899.jsonl", "absorber": "SUPERSTITION", "recovered": [], "relabeled_from": null}
+{"file": "EB.11_ed6_v02_America-ASS_192015835.jsonl", "absorber": "ANIMAL", "recovered": ["ANIMALCULE"], "relabeled_from": null}
+{"file": "EB.11_ed6_v02_America-ASS_192015835.jsonl", "absorber": "ARMS", "recovered": ["ARMSTRONG"], "relabeled_from": null}
+{"file": "EB.11_ed6_v08_ELE-FOR_192015836.jsonl", "absorber": "FONTENELLE", "recovered": ["FONTICULUS", "FONTINALIS", "FOOD"], "relabeled_from": null}
+{"file": "EB.11_ed6_v12_LIE-Materia-medica_191689064.jsonl", "absorber": "LONG", "recovered": ["LONGEVITY"], "relabeled_from": null}
+{"file": "EB.11_ed6_v14_MIC-NIC_191689065.jsonl", "absorber": "MILLO", "recovered": ["MILO"], "relabeled_from": null}
+{"file": "EB.11_ed6_v14_MIC-NIC_191689065.jsonl", "absorber": "MONSOON", "recovered": ["MONSTER"], "relabeled_from": null}
+{"file": "EB.11_ed6_v14_MIC-NIC_191689065.jsonl", "absorber": "MOSQUE", "recovered": ["MOSS"], "relabeled_from": null}
+{"file": "EB.11_ed6_v15_NIC-PAR_192015837.jsonl", "absorber": "PARALLACTIC", "recovered": [], "relabeled_from": "PARALEPSIS"}
+{"file": "EB.11_ed6_v17_Poetry-RHI_192547784.jsonl", "absorber": "REPROBATION", "recovered": ["REPRODUCTION"], "relabeled_from": null}
+{"file": "EB.11_ed6_v18_RHI-Scripture_192015834.jsonl", "absorber": "SABBATARIANS", "recovered": ["SABBATH"], "relabeled_from": null}
+{"file": "EB.11_ed6_v19_Scripture-SUG_193057497.jsonl", "absorber": "SMEATON", "recovered": ["SMELL", "SMELLING"], "relabeled_from": null}
+{"file": "EB.11_ed6_v19_Scripture-SUG_193057497.jsonl", "absorber": "SQUARE-SAIL", "recovered": ["SQUARING"], "relabeled_from": null}
+{"file": "EB.11_ed6_v20_SUI-ZYM_193696081.jsonl", "absorber": "WORK", "recovered": ["WORKHOUSE"], "relabeled_from": null}
+{"file": "EB.12_suppl_v01_193057498.jsonl", "absorber": "ANT", "recovered": ["ANTRIM"], "relabeled_from": null}
+{"file": "EB.12_suppl_v02_193108319.jsonl", "absorber": "BETTINELLI", "recovered": ["BEYKANEER"], "relabeled_from": null}
+{"file": "EB.12_suppl_v02_193108319.jsonl", "absorber": "BUAT-NANCAY", "recovered": ["BUCKINGHAM-S"], "relabeled_from": null}
+{"file": "EB.12_suppl_v03_192016360.jsonl", "absorber": "CYANOMETER", "recovered": ["DAIRY"], "relabeled_from": null}
+{"file": "EB.12_suppl_v04_192146221.jsonl", "absorber": "FICHTE", "recovered": ["FIFESHIRE"], "relabeled_from": null}
+{"file": "EB.12_suppl_v04_192146221.jsonl", "absorber": "FONTANA", "recovered": ["FOOD"], "relabeled_from": null}
+{"file": "EB.12_suppl_v05_192547786.jsonl", "absorber": "LEICESTERSHIRE", "recovered": ["LEITRIM"], "relabeled_from": null}
+{"file": "EB.12_suppl_v05_192547786.jsonl", "absorber": "LONDONDERRY", "recovered": ["LONGFORD"], "relabeled_from": null}
+{"file": "EB.12_suppl_v06_192547787.jsonl", "absorber": "NORFOLK", "recovered": ["NORTHAMPTONSHIRE"], "relabeled_from": null}
+{"file": "EB.12_suppl_v06_192547787.jsonl", "absorber": "PALLAS", "recovered": ["PANORAMA"], "relabeled_from": null}
+{"file": "EB.12_suppl_v06_192547787.jsonl", "absorber": "WATERFORD", "recovered": ["WATSON"], "relabeled_from": null}
+{"file": "EB.12_suppl_v06_192547787.jsonl", "absorber": "WESTMORELAND", "recovered": ["WEXFORD"], "relabeled_from": null}
+{"file": "EB.15_ed7_v04_Astronomy-BOR_193108322.jsonl", "absorber": "BALK", "recovered": ["BALLAD"], "relabeled_from": null}
+{"file": "EB.15_ed7_v04_Astronomy-BOR_193108322.jsonl", "absorber": "BEDWIN", "recovered": ["BEE"], "relabeled_from": null}
+{"file": "EB.15_ed7_v04_Astronomy-BOR_193108322.jsonl", "absorber": "BETEL", "recovered": ["BETELFAGUI"], "relabeled_from": null}
+{"file": "EB.15_ed7_v06_CAL-Clock_193322690.jsonl", "absorber": "CAORLO", "recovered": ["CAOUTCHOU"], "relabeled_from": null}
+{"file": "EB.15_ed7_v07_CLO-Dialling_193819043.jsonl", "absorber": "DEVOTION", "recovered": ["DEW"], "relabeled_from": null}
+{"file": "EB.15_ed7_v08_DIA-England_193322688.jsonl", "absorber": "DOMENICHINO", "recovered": ["DOMESDAY"], "relabeled_from": null}
+{"file": "EB.15_ed7_v12_Hydrodynamics-KYR_192693199.jsonl", "absorber": "JUGURTHA", "recovered": ["JUICE"], "relabeled_from": null}
+{"file": "EB.15_ed7_v14_Magnetism-Mexico_193322689.jsonl", "absorber": "MARRACCI", "recovered": ["MARRIAGE"], "relabeled_from": null}
+{"file": "EB.15_ed7_v17_PAN-Plastic-nature_193469091.jsonl", "absorber": "PEMBROKE", "recovered": ["PEMBROKESHIRE"], "relabeled_from": null}
+{"file": "EB.15_ed7_v19_RAB-SCU_193057501.jsonl", "absorber": "SADDUCEES", "recovered": [], "relabeled_from": "SACRISTY"}
+{"file": "EB.15_ed7_v20_Sculpture-SUR_193913444.jsonl", "absorber": "SELEUCIDÆ", "recovered": ["SELF-LOVE"], "relabeled_from": null}
+{"file": "EB.15_ed7_v20_Sculpture-SUR_193913444.jsonl", "absorber": "SIXTUS", "recovered": [], "relabeled_from": "SIXTH"}
+{"file": "EB.16_ed8_v02_A-Anatomy_193322698.jsonl", "absorber": "AMBOISE", "recovered": ["AMBOYNA"], "relabeled_from": null}
+{"file": "EB.16_ed8_v03_Anatomy-Astronomy_193696085.jsonl", "absorber": "ARGYLESHIRE", "recovered": ["ARGYRASPIDES"], "relabeled_from": null}
+{"file": "EB.16_ed8_v04_Astronomy-BOM_193696086.jsonl", "absorber": "BELLENDEN", "recovered": ["BELLEROPHON"], "relabeled_from": null}
+{"file": "EB.16_ed8_v06_Burning-glasses-Climate_193109113.jsonl", "absorber": "CAERMARTHEN", "recovered": ["CAERNARVON-SHIRE", "CAERNARVON"], "relabeled_from": null}
+{"file": "EB.16_ed8_v07_CLI-DIA_193109114.jsonl", "absorber": "CORNUS", "recovered": ["CORNWALL"], "relabeled_from": null}
+{"file": "EB.16_ed8_v09_Entomology-FRA_193322700.jsonl", "absorber": "FLORIDA", "recovered": ["FLORIN"], "relabeled_from": null}
+{"file": "EB.16_ed8_v10_France-GRA_193109115.jsonl", "absorber": "GARCILASSO", "recovered": [], "relabeled_from": "GARBE"}
+{"file": "EB.16_ed8_v12_Hume-JOM_193696087.jsonl", "absorber": "HYMN", "recovered": ["HYPATIA"], "relabeled_from": null}
+{"file": "EB.16_ed8_v13_Jonah-MAG_193916150.jsonl", "absorber": "JUSTIN", "recovered": ["JUSTINIAN"], "relabeled_from": null}
+{"file": "EB.16_ed8_v17_ORO-Plato_193819046.jsonl", "absorber": "PEARSON", "recovered": ["PEAT"], "relabeled_from": null}
+{"file": "EB.16_ed8_v17_ORO-Plato_193819046.jsonl", "absorber": "PELAGIUS", "recovered": ["PELASGI"], "relabeled_from": null}
+{"file": "EB.16_ed8_v17_ORO-Plato_193819046.jsonl", "absorber": "PERICLES", "recovered": ["PERIGEE"], "relabeled_from": null}
+{"file": "EB.16_ed8_v19_Reid-Scythia_193322701.jsonl", "absorber": "SANCHEZ", "recovered": ["SANCHONIATHO"], "relabeled_from": null}
+{"file": "EB.16_ed8_v20_Seamanship-SZO_193469393.jsonl", "absorber": "SOUTH", "recovered": ["SOUTHAMPTON"], "relabeled_from": null}
+{"file": "EB.16_ed8_v21_T-ZWO_193819047.jsonl", "absorber": "WILKINS", "recovered": ["WILLIAM"], "relabeled_from": null}
+{"file": "EB.4_ed2_v04_D-F_144850375.jsonl", "absorber": "FALCO", "recovered": ["FALCON"], "relabeled_from": null}
+{"file": "EB.4_ed2_v04_D-F_144850375.jsonl", "absorber": "FISH", "recovered": ["FISHES"], "relabeled_from": null}
+{"file": "EB.4_ed2_v05_G-J_144850376.jsonl", "absorber": "HALE", "recovered": ["HALES"], "relabeled_from": null}
+{"file": "EB.4_ed2_v05_G-J_144850376.jsonl", "absorber": "JEW", "recovered": ["JEZIDES"], "relabeled_from": null}
+{"file": "EB.4_ed2_v06_K-Medicine_144850377.jsonl", "absorber": "LORD", "recovered": ["LORDS"], "relabeled_from": null}
+{"file": "EB.4_ed2_v06_K-Medicine_144850377.jsonl", "absorber": "MACE", "recovered": ["MACEDON"], "relabeled_from": null}
+{"file": "EB.4_ed2_v10_SCU-Appendix_190273290.jsonl", "absorber": "SENTIMENT", "recovered": ["SENTIMENTS"], "relabeled_from": null}
+{"file": "EB.4_ed2_v10_SCU-Appendix_190273290.jsonl", "absorber": "VITIS", "recovered": ["VITREOUS"], "relabeled_from": null}
+{"file": "EB.4_ed2_v10_SCU-Appendix_190273290.jsonl", "absorber": "MEASURES", "recovered": ["MEDINE"], "relabeled_from": null}
+{"file": "EB.4_ed2_v10_SCU-Appendix_190273290.jsonl", "absorber": "SENSE", "recovered": ["SERPENTES"], "relabeled_from": null}
+{"file": "EB.5_ed3_v02_ANG-BAR_149977338.jsonl", "absorber": "ARANEA", "recovered": [], "relabeled_from": "ARAMONT"}
+{"file": "EB.5_ed3_v02_ANG-BAR_149977338.jsonl", "absorber": "AVIARY", "recovered": ["AVICENNA"], "relabeled_from": null}
+{"file": "EB.5_ed3_v03_BAR-BZO_149977873.jsonl", "absorber": "BAS", "recovered": ["BASALTES"], "relabeled_from": null}
+{"file": "EB.5_ed3_v03_BAR-BZO_149977873.jsonl", "absorber": "BOLETUS", "recovered": ["BOLEYN"], "relabeled_from": null}
+{"file": "EB.5_ed3_v04_CAA-CIC_149978642.jsonl", "absorber": "CAORLO", "recovered": ["CAOUTCHOU"], "relabeled_from": null}
+{"file": "EB.5_ed3_v06_DIA-ETH_149979622.jsonl", "absorber": "DIDELPHIS", "recovered": [], "relabeled_from": "DIDAPPER"}
+{"file": "EB.5_ed3_v06_DIA-ETH_149979622.jsonl", "absorber": "ENCANTHIS", "recovered": ["ENCAUSTIC"], "relabeled_from": null}
+{"file": "EB.5_ed3_v07_ETM-GOA_149981189.jsonl", "absorber": "FIRE-P", "recovered": ["FIRER", "FIRES"], "relabeled_from": null}
+{"file": "EB.5_ed3_v07_ETM-GOA_149981189.jsonl", "absorber": "FONTARABIA", "recovered": ["FONTENAY", "FONTENELLE", "FONTENOY", "FONTICULUS", "FONTINALIA", "FONTINALIS", "FOOD"], "relabeled_from": null}
+{"file": "EB.5_ed3_v07_ETM-GOA_149981189.jsonl", "absorber": "FOUNTAIN", "recovered": ["FOUNTAIN-T"], "relabeled_from": null}
+{"file": "EB.5_ed3_v07_ETM-GOA_149981189.jsonl", "absorber": "GEM", "recovered": ["GEMARA"], "relabeled_from": null}
+{"file": "EB.5_ed3_v09_Hydrostatics-LES_149982181.jsonl", "absorber": "INSTEP", "recovered": ["INSTINCT"], "relabeled_from": null}
+{"file": "EB.5_ed3_v10_LES-MEC_149982692.jsonl", "absorber": "LOG", "recovered": ["LOG-LINE"], "relabeled_from": null}
+{"file": "EB.5_ed3_v10_LES-MEC_149982692.jsonl", "absorber": "LORD", "recovered": ["LORDS"], "relabeled_from": null}
+{"file": "EB.5_ed3_v10_LES-MEC_149982692.jsonl", "absorber": "LUXURIANS", "recovered": ["LUXURY"], "relabeled_from": null}
+{"file": "EB.5_ed3_v11_Medals-Midwifery_149983206.jsonl", "absorber": "MELOE", "recovered": ["MELON"], "relabeled_from": null}
+{"file": "EB.5_ed3_v12_MIE-NEG_190273372.jsonl", "absorber": "MINSTREL", "recovered": [], "relabeled_from": "MINOW"}
+{"file": "EB.5_ed3_v12_MIE-NEG_190273372.jsonl", "absorber": "MOTION", "recovered": [], "relabeled_from": "MOTHER OF PEARL"}
+{"file": "EB.5_ed3_v12_MIE-NEG_190273372.jsonl", "absorber": "MOUNTAIN", "recovered": ["MOUNTAINS"], "relabeled_from": null}
+{"file": "EB.5_ed3_v12_MIE-NEG_190273372.jsonl", "absorber": "MYSON", "recovered": ["MYSORE"], "relabeled_from": null}
+{"file": "EB.5_ed3_v13_NEH-PAS_191253798.jsonl", "absorber": "NOBILIARY", "recovered": ["NOBILITY"], "relabeled_from": null}
+{"file": "EB.5_ed3_v14_PAS-PLA_192200061.jsonl", "absorber": "PETROJOANNITES", "recovered": ["PETROLEUM"], "relabeled_from": null}
+{"file": "EB.5_ed3_v15_PLA-RAM_191253799.jsonl", "absorber": "PLATFORM", "recovered": ["PLATINA"], "relabeled_from": null}
+{"file": "EB.5_ed3_v15_PLA-RAM_191253799.jsonl", "absorber": "POPULUS", "recovered": ["POQUELIN"], "relabeled_from": null}
+{"file": "EB.5_ed3_v15_PLA-RAM_191253799.jsonl", "absorber": "PREHNITE", "recovered": ["PREJUDICE"], "relabeled_from": null}
+{"file": "EB.5_ed3_v15_PLA-RAM_191253799.jsonl", "absorber": "PUMP", "recovered": [], "relabeled_from": "PUMICE-STONE"}
+{"file": "EB.5_ed3_v15_PLA-RAM_191253799.jsonl", "absorber": "PUTREFACTION", "recovered": [], "relabeled_from": "PUTORIUS"}
+{"file": "EB.5_ed3_v16_RAN-SCO_191319917.jsonl", "absorber": "SABBATH", "recovered": ["SABBATH-B"], "relabeled_from": null}
+{"file": "EB.5_ed3_v16_RAN-SCO_191319917.jsonl", "absorber": "SACRIFICE", "recovered": ["SACRIFICES"], "relabeled_from": null}
+{"file": "EB.5_ed3_v17_SCO-STR_191253800.jsonl", "absorber": "SECANT", "recovered": ["SECEDERS"], "relabeled_from": null}
+{"file": "EB.5_ed3_v17_SCO-STR_191253800.jsonl", "absorber": "SHAKESPEARE", "recovered": [], "relabeled_from": "SHAKE"}
+{"file": "EB.5_ed3_v17_SCO-STR_191253800.jsonl", "absorber": "SLAVERY", "recovered": [], "relabeled_from": "SLAVE"}
+{"file": "EB.5_ed3_v18_STR-ZYM_191253817.jsonl", "absorber": "TUTOR", "recovered": ["TYNDALE"], "relabeled_from": null}
+{"file": "EB.5_ed3_v18_STR-ZYM_191253817.jsonl", "absorber": "WHIST", "recovered": [], "relabeled_from": "WHISPERING-PLACES"}
+{"file": "EB.5_ed3_v18_STR-ZYM_191253817.jsonl", "absorber": "WINCKLEMAN", "recovered": ["WINDF", "WINDG", "WINDH", "WINDS"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "ALTITUDE", "recovered": ["ALUM"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "BATAVIA", "recovered": ["BEER"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "CANABAC", "recovered": ["CANAL"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "DAGELET", "recovered": ["DAIRY"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "FERMAT", "recovered": ["FERMENTATION", "FEZZAN", "FIGURATE"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "FILTER", "recovered": ["FIRE"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "GIBBON", "recovered": ["GIBRALTAR"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "HASSELQUIST", "recovered": ["HAT"], "relabeled_from": null}
+{"file": "EB.7_suppl_v01_ABE-IMP_191253807.jsonl", "absorber": "HOUSSA", "recovered": ["HOUZOUANAS"], "relabeled_from": null}
+{"file": "EB.7_suppl_v02_IND-ZEM_191253808.jsonl", "absorber": "JUAN", "recovered": ["JUGGLERS"], "relabeled_from": null}
+{"file": "EB.7_suppl_v02_IND-ZEM_191253808.jsonl", "absorber": "PRISMOID", "recovered": ["PRISON"], "relabeled_from": null}
+{"file": "EB.9_ed4_v02_Part1_AME-ANS_192545783.jsonl", "absorber": "AMERICA", "recovered": ["AMERICAN", "AMERICUS"], "relabeled_from": null}
+{"file": "EB.9_ed4_v02_Part2_ANT-ASS_192545784.jsonl", "absorber": "ARMS", "recovered": ["ARMSTRONG"], "relabeled_from": null}
+{"file": "EB.9_ed4_v02_Part2_ANT-ASS_192545784.jsonl", "absorber": "ARSURA", "recovered": ["ART"], "relabeled_from": null}
+{"file": "EB.9_ed4_v03_Part1_ASS-BAR_191809865.jsonl", "absorber": "BARBARUS", "recovered": ["BARBARY"], "relabeled_from": null}
+{"file": "EB.9_ed4_v05_Part1_BUR-CHA_191320556.jsonl", "absorber": "CANARY", "recovered": ["CANARYBIRD"], "relabeled_from": null}
+{"file": "EB.9_ed4_v07_Part1_CTE-Dyeing_192692191.jsonl", "absorber": "DÆMON", "recovered": ["DÆMONIAC"], "relabeled_from": null}
+{"file": "EB.9_ed4_v08_Part2_FAI-FOR_191320561.jsonl", "absorber": "FLAX", "recovered": ["FLEA"], "relabeled_from": null}
+{"file": "EB.9_ed4_v09_Part1_FOR-Gardening_193109110.jsonl", "absorber": "FOUNTAIN", "recovered": ["FOUNTAINT"], "relabeled_from": null}
+{"file": "EB.9_ed4_v10_Part1_GOT-Heraldry_192692192.jsonl", "absorber": "GUARD", "recovered": ["GUARDS"], "relabeled_from": null}
+{"file": "EB.9_ed4_v11_Part1_HYD-JUN_191679019.jsonl", "absorber": "IMPOTENCE", "recovered": ["IMPOTENCY"], "relabeled_from": null}
+{"file": "EB.9_ed4_v11_Part1_HYD-JUN_191679019.jsonl", "absorber": "INSTEP", "recovered": ["INSTINCT"], "relabeled_from": null}
+{"file": "EB.9_ed4_v12_Part1_LIE-MAG_192545785.jsonl", "absorber": "LORD", "recovered": ["LORDS"], "relabeled_from": null}
+{"file": "EB.9_ed4_v12_Part1_LIE-MAG_192545785.jsonl", "absorber": "LUXEMBURG", "recovered": ["LUXURIANS", "LUXURY"], "relabeled_from": null}
+{"file": "EB.9_ed4_v12_Part2_MAH-Materia-medica_192545786.jsonl", "absorber": "MALPLAQUET", "recovered": ["MALT"], "relabeled_from": null}
+{"file": "EB.9_ed4_v12_Part2_MAH-Materia-medica_192545786.jsonl", "absorber": "MANICHEES", "recovered": [], "relabeled_from": "MANIA"}
+{"file": "EB.9_ed4_v13_Part2_Medicine-MIC_191678903.jsonl", "absorber": "MELOS", "recovered": ["MELPOMENE", "MELROSE", "MELT", "MELTING", "MELVIL", "MEMBER", "MEMBRANE", "MEMEL"], "relabeled_from": null}
+{"file": "EB.9_ed4_v14_Part2_Moral-philosophy-NIC_191253839.jsonl", "absorber": "NECK", "recovered": ["NECROLIUM", "NECROLOGY", "NECROMANCY"], "relabeled_from": null}
+{"file": "EB.9_ed4_v15_Part2_ORC-PAR_191253837.jsonl", "absorber": "PARAGRAPH", "recovered": ["PARAGUAY"], "relabeled_from": null}
+{"file": "EB.9_ed4_v16_Part1_PAR-PHL_191689060.jsonl", "absorber": "PERSIA", "recovered": [], "relabeled_from": "PERSEUS"}
+{"file": "EB.9_ed4_v17_Part1_Poetry-Projectiles_191320559.jsonl", "absorber": "POLISHING", "recovered": ["POLITENESS"], "relabeled_from": null}
+{"file": "EB.9_ed4_v17_Part1_Poetry-Projectiles_191320559.jsonl", "absorber": "PREDESTINATION", "recovered": ["PREDETERMINATION"], "relabeled_from": null}
+{"file": "EB.9_ed4_v19_Part1_SCR-SLE_193108316.jsonl", "absorber": "SENN", "recovered": ["SENNA"], "relabeled_from": null}
+{"file": "EB.9_ed4_v19_Part1_SCR-SLE_193108316.jsonl", "absorber": "SHAKESPEARE", "recovered": [], "relabeled_from": "SHAKE"}
+{"file": "EB.9_ed4_v20_Part2_THE-ZYM_191678901.jsonl", "absorber": "TURGOT", "recovered": ["TURIN"], "relabeled_from": null}

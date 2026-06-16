@@ -191,19 +191,32 @@ record — PERSIA under PERSEUS, INSTINCT under INSTEP). Three stages mirroring 
    body, leave the first segment with the absorber, and emit the rest as new `detected_by=
    "absorption-split"` records. Idempotent (skips records already carrying `provenance.absorbed_split`).
 
-**Full 10-edition pass complete** (679 absorber records, 85 batches): the Sonnet splitter confirmed
-92 absorbers carrying 118 found splits, correctly rejecting detector noise (most candidates resolve to
-found=false — a word appearing only in passing prose). `apply_absorbed_splits.py` then **split 89
-absorbers and recovered 104 records** (new records + relabels; 2 start_texts unlocated) across all ten
-editions: INSTINCT 72K from INSTEP, MACEDON 139K from MACE, PERSIA 142K from PERSEUS, MOTION 96K,
-SHAKESPEARE, SLAVERY, BARBARY, PARAGUAY, NECROLOGY/NECROMANCY, FONTICULUS/FONTINALIS/FOOD, WEXFORD from
-WESTMORELAND, CORNWALL, SOUTHAMPTON, PEMBROKESHIRE, … When the absorber's own article is negligible
-(<150 chars — a marginal-note scrap before the whole absorbed article, e.g. PERSEUS), the record is
-relabelled to the recovered headword (`provenance.relabeled_from`) rather than left as a stub.
+**Full 10-edition pass complete.** Cumulatively across all absorbed-recovery runs the data now holds
+**147 absorbers split / 185 recovered article records** (18 of them relabels), tallied directly from
+record provenance (`provenance.absorbed_split` / `split_from`) — see the derived manifest
+`absorbed_applied.jsonl`. (Note: the per-run `absorbed_splits.jsonl` decisions log is only the latest
+session's batch and its line numbers drift after inserts, so it no longer reconstructs the full applied
+state; `absorbed_applied.jsonl` is the authoritative record.) Recovered articles include INSTINCT 72K
+from INSTEP, MACEDON 139K from MACE, PERSIA 142K from PERSEUS, MOTION 96K, SHAKESPEARE, SLAVERY, BARBARY,
+PARAGUAY, NECROLOGY/NECROMANCY, WEXFORD from WESTMORELAND, CORNWALL, SOUTHAMPTON, PEMBROKESHIRE, and
+WIND 76K from WINCKLEMAN. When the absorber's own article is negligible (<150 chars — a marginal-note
+scrap before the whole absorbed article, e.g. PERSEUS), the record is relabelled to the recovered
+headword (`provenance.relabeled_from`) rather than left as a stub.
 
 The split pass was run as a resumable driver (`scripts/repair_driver.py`, i-keyed decisions in
 `absorbed_splits.jsonl`) in 9 increments of ~10 batches, so an interrupted/usage-limited run simply
 re-lists its unfinished batches next time.
+
+**Cleanup pass (Stage A, commit `ab0d0f7`).** A post-recovery audit fixed repair-pipeline defects:
+the headword substring-replace bug (`apply_headword_fixes.py`, now anchored) plus 50 mis-applied
+headword records repaired in place from provenance (30 wrong hyphenated-compound targets reverted to
+raw, 20 string-corruptions fixed; 1373 good corrections preserved). The buried WIND treatise was split
+out of WINCKLEMAN, SUPERIOR's discarded article re-inserted, and 4 blank-flyleaf `VOL<roman>` records
+deleted from EB.16. `postpass_fields.py` populated 282 parenthetical `qualifier` fields and clamped 413
+OCR-bogus `printed_page_end` values (via image-page span) across the 6 core editions + EB.7. NOTE: the
+headword/absorbed decision+candidate files are stale across multiple historical runs (the current
+`headword_*.jsonl` reproduces only 420 of 1368 applied corrections), so cleanups work from record
+provenance, not by replaying the pipeline.
 
 ### Record schema
 ### Record schema
