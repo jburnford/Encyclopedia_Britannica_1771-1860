@@ -218,6 +218,29 @@ headword/absorbed decision+candidate files are stale across multiple historical 
 `headword_*.jsonl` reproduces only 420 of 1368 applied corrections), so cleanups work from record
 provenance, not by replaying the pipeline.
 
+**Cleanup pass (Stage B — re-parse EB.12/15/16).** Root cause of the late-edition defects: EB.12/15/16
+print the full current headword as the page running head ("ACOUSTICS.", "VOL. XIV") rather than a
+3-letter trigram, so `parse_page_header` mis-read continuation pages as treatise gaps — truncating the
+open article and spawning junk spaceless treatises (and end-of-volume "VOL<roman>" records). Fixed with
+a `running_head:"word"` profile flag that synthesizes a trigram from a full-word head, plus a VOL.<roman>
+guard (commit `cc98ef3`). After archiving to `repair_archive/prereparse_b2/` and re-parsing:
+
+| edition | records (before→after) | truncation (before→after) | VOL-junk |
+|---|---|---|---|
+| EB.12 | 594 → 724  | 30.3% → 7.4% | 0 |
+| EB.15 | 24,864 → 25,984 | 6.4% → 1.6% | 0 |
+| EB.16 | 20,786 → 23,094 | 6.8% → 1.9% | 0 |
+
+Headword corrections (wiped by re-parse) were rebuilt from the archived files' provenance via
+`reapply_headword_from_archive.py` (271 restored: EB.15 162, EB.16 108, EB.12 1). The scoped absorbed
+re-run was **dropped**: re-detection produced 1,151 candidates but a ref-text pre-filter found only ~5
+real welds (the rest are genuine editorial absences, not welds — the re-parse already recovered the bulk
+via segmentation), and the few multi-article welds can't be safely auto-split. Genuine in-body treatises
+now parse as long `article` records (content intact); `type` is left as-is — it is **not a reliable
+treatise filter** corpus-wide (use size/content), and `body_html` carries no section-header signal to
+re-type from. Two known residuals: EB.12 has ~96 spaceless multi-word headwords (`ALEUTIANISLANDS`) — a
+headword-spacing issue separate from segmentation — and EB.12 headword reconciliation (D4) was not run.
+
 ### Record schema
 ### Record schema
 
