@@ -89,7 +89,13 @@ def main():
                 prov["raw_base_headword"] = old_base
                 prov["headword_correction"] = meta
                 r["base_headword"] = canon
-                r["headword"] = old_hw.replace(old_base, canon, 1) if old_base in old_hw else canon
+                # Substitute old_base only where it stands as a complete token, so a
+                # truncated caps-prefix base (e.g. "SNOW-D" inside "SNOW-Drop") cannot
+                # corrupt the surrounding headword into "SNOWDONrop". Fall back to the
+                # bare canonical when no whole-token match exists.
+                anchored = re.sub(rf"(?<![A-Za-z]){re.escape(old_base)}(?![A-Za-z-])",
+                                  canon, old_hw, count=1)
+                r["headword"] = anchored if anchored != old_hw else canon
                 changed = True
                 total_recs += 1
             if changed and not args.dry_run:
